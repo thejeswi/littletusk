@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Little Tusk setup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <img class="tusk" src="tusk.svg" alt="Tusk, a baby elephant">
+  <h1>Little Tusk setup</h1>
+  <section id="opening" hidden>
+    <h2>Opening Little Tusk…</h2>
+    <p id="notinstalled" hidden>Nothing happened? Then Little Tusk is probably not installed in this browser yet. Install it first
+      (see <a href="index.html">how to get it</a>), then open the link from the email again.</p>
+  </section>
+  <section>
+    <h2>Make a setup link</h2>
+    <p>Fill this in, then send the link by email to the person you are helping. Everything happens in this page. Nothing is sent anywhere.</p>
+    <label class="field">Provider
+      <select id="provider">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">OpenAI</option>
+        <option value="google">Google (Gemini)</option>
+        <option value="mistral">Mistral</option>
+        <option value="openrouter">OpenRouter</option>
+      </select></label>
+    <label class="field">Key <a id="keyHelp" href="#" target="_blank" rel="noreferrer" style="font-weight:400">(where do I get a key?)</a>
+      <input id="key" type="password" autocomplete="off" spellcheck="false"></label>
+    <div class="row">
+      <label class="field">Monthly spending limit (0 = none)<input id="limit" type="number" min="0" max="1000" step="1" value="10"></label>
+      <label class="field">Currency<select id="currency"><option>EUR</option><option>USD</option></select></label>
+    </div>
+    <div class="row">
+      <label class="field">Language<select id="language"><option value="en">English</option><option value="de">German</option><option value="es">Spanish</option><option value="en-IN">English (India)</option></select></label>
+      <label class="field">Mode<select id="mode"><option value="show">Show me how</option><option value="look-after">Look after me</option></select></label>
+    </div>
+    <label class="field">The person's first name (optional)<input id="name" type="text" maxlength="60"></label>
+    <div class="warn">This link contains your key. Use a key with a spending limit, and delete the email after setup.</div>
+    <button id="make">Make link</button><button id="copy" class="secondary">Copy link</button>
+    <p id="out" class="linkbox" hidden></p>
+    <p id="msg" role="status"></p>
+  </section>
+</main>
+<script src="setup.js"></script>
+</body>
+</html>

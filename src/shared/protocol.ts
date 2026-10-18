@@ -20,6 +20,8 @@ export interface Settings {
   /** epoch ms until which Tusk is tucked away everywhere */
   tuckedUntil: number;
   setupDone: boolean;
+  /** the person's first name, optional, for the greeting */
+  name?: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
