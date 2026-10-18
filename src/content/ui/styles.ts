@@ -70,25 +70,25 @@ button.tusk.pointing .pose-point{display:block}
 .q .btns{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
 .q .res{margin-top:8px;font-size:14px;color:#52606d}
 .think{align-self:flex-start;color:#52606d;font-size:15px;padding:4px 8px}
-.compose{display:flex;gap:8px;padding:10px;border-top:1px solid #d3dde3;align-items:center}
-.compose input{flex:1;min-width:0;height:52px;border-radius:26px;border:2px solid #99bbbb;padding:0 16px;font-size:18px;background:#fff}
+.compose{display:flex;gap:8px;padding:10px 8px;border-top:1px solid #d3dde3;align-items:center}
+.compose input{flex:1;min-width:0;height:52px;border-radius:26px;border:2px solid #99bbbb;padding:0 14px;font-size:18px;background:#fff}
 .compose .send{min-width:76px}
 .mic{width:52px;height:52px;border-radius:50%;border:2px solid #99bbbb;background:#fff;font-size:24px;flex:none;padding:0}
 .mic.on{background:#2f9e6d;border-color:#2f9e6d}
 .foot{padding:6px 14px 10px;font-size:13px;color:#52606d;text-align:center}
 
 /* Settings */
-.set{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.set{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 .set label.f{display:flex;flex-direction:column;gap:4px;font-weight:600}
-.set select{height:48px;border-radius:12px;border:2px solid #99bbbb;padding:0 10px;font-size:17px;background:#fff}
+.set select{height:44px;border-radius:12px;border:2px solid #99bbbb;padding:0 10px;font-size:17px;background:#fff}
 .modes{display:flex;flex-direction:column;gap:8px}
-.modecard{text-align:left;border:2px solid #c3d0d8;border-radius:14px;background:#fff;padding:10px 12px;min-height:48px}
+.modecard{text-align:left;border:2px solid #c3d0d8;border-radius:14px;background:#fff;padding:8px 12px;min-height:48px;line-height:1.35}
 .modecard[aria-checked="true"]{border-color:#2f9e6d;background:#eaf7f0}
 .modecard b{display:block;font-size:17px}
 .modecard span{font-size:14px;color:#52606d}
-.toggle{display:flex;align-items:center;gap:12px;min-height:48px;font-weight:600}
+.toggle{display:flex;align-items:center;gap:12px;min-height:44px;font-weight:600}
 .toggle input{width:28px;height:28px;flex:none}
-.act{min-height:48px;border-radius:14px;border:2px solid #c3d0d8;background:#fff;font-size:16px;padding:8px 12px;text-align:left}
+.act{min-height:44px;border-radius:14px;border:2px solid #c3d0d8;background:#fff;font-size:16px;padding:8px 12px;text-align:left}
 
 /* Target marks */
 .hl,.ask-frame{position:fixed;border-radius:10px;border:4px solid #ffb703;box-shadow:0 0 0 4px rgba(255,183,3,.35);animation:pulse 1.6s ease-in-out infinite}

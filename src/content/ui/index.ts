@@ -70,7 +70,7 @@ type Bubble = {
   src: "say" | "point" | "chat" | "question" | "offer";
   buttons?: { yes: () => void; no: () => void };
 };
-type Mark = { el: Element; style: "point" | "spot" | "ask" };
+type Mark = { el: Element; style: "point" | "spot" | "ask"; cont?: Rect | null };
 
 function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -165,7 +165,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   chatClose.addEventListener("click", () => setPanel(null));
   const list = h("div", "list", { "aria-live": "polite" });
   const input = h("input", "", { type: "text", autocomplete: "off", enterkeyhint: "send" });
-  label(input, "typeHere", "placeholder"); label(input, "typeHere", "aria-label");
+  label(input, "typeShort", "placeholder"); label(input, "typeHere", "aria-label");
   const sendBtn = h("button", "btn yes send", { type: "button" });
   label(sendBtn, "send");
   const micBtn = h("button", "mic", { type: "button" }, "🎤");
@@ -427,7 +427,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     put(el, clamp(onRight ? p.x + S - w : p.x, 8, Math.max(8, vw() - w - 8)), top);
   }
 
-  function placeBubbleLike(el: HTMLElement, avoid: Rect[], prefer: "up" | "side" | "away-left" | "away-right" = "up") {
+  function placeBubbleLike(el: HTMLElement, avoid: Rect[], prefer: "up" | "side" | "away-left" | "away-right" = "up", soft: Rect[] = []) {
     if (el.hidden) return;
     const p = tuskPos();
     const w = el.offsetWidth || 260, hh = el.offsetHeight || 60, g = 10;
@@ -435,15 +435,20 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     const cand: Array<[number, number]> = [
       [cx, p.y - hh - g], [cx, p.y + S + g], [p.x - w - g, cy], [p.x + S + g, cy],
     ];
-    if (prefer === "away-left") cand.unshift(cand[2]);
-    if (prefer === "away-right") cand.unshift(cand[3]);
+    // Tusk stands beside the target: a bubble above or below Tusk, lined up on the far side, stays off the target.
+    if (prefer === "away-left") cand.unshift(cand[2], [p.x + S - w, p.y - hh - g], [p.x + S - w, p.y + S + g]);
+    if (prefer === "away-right") cand.unshift(cand[3], [p.x, p.y - hh - g], [p.x, p.y + S + g]);
     const fix = ([x, y]: [number, number]) => [clamp(x, 8, Math.max(8, vw() - w - 8)), clamp(y, 8, Math.max(8, vh() - hh - 8))] as [number, number];
     let chosen: [number, number] | null = null;
-    for (const c of cand) {
-      const [x, y] = fix(c);
-      const r = { l: x, t: y, r: x + w, b: y + hh };
-      const tr = { l: p.x, t: p.y, r: p.x + S, b: p.y + S };
-      if (!avoid.some((a) => hit(a, r)) && !hit(tr, r)) { chosen = [x, y]; break; }
+    const tr = { l: p.x, t: p.y, r: p.x + S, b: p.y + S };
+    // First try to stay clear of the popup or form around the target too; if nothing fits, only keep clear of the target.
+    for (const list of [avoid.concat(soft), avoid]) {
+      for (const c of cand) {
+        const [x, y] = fix(c);
+        const r = { l: x, t: y, r: x + w, b: y + hh };
+        if (!list.some((a) => hit(a, r)) && !hit(tr, r)) { chosen = [x, y]; break; }
+      }
+      if (chosen) break;
     }
     const [x, y] = chosen ?? fix(cand[0]);
     put(el, x, y);
@@ -488,7 +493,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
 
     // panels
     if (!chatEl.hidden) placePanel(chatEl, 380, 540);
-    if (!setEl.hidden) placePanel(setEl, 340, 640);
+    if (!setEl.hidden) placePanel(setEl, 340, 660);
     if (!menu.hidden) {
       const onRight = p.x + S / 2 > vw() / 2;
       menu.classList.toggle("left-side", !onRight);
@@ -503,12 +508,12 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       const mcx = (markRect.l + markRect.r) / 2, mcy = (markRect.t + markRect.b) / 2;
       if (Math.abs(mcx - (p.x + S / 2)) > Math.abs(mcy - (p.y + S / 2))) prefer = mcx > p.x ? "away-left" : "away-right";
     }
-    placeBubbleLike(bubbleEl, avoid, prefer);
+    placeBubbleLike(bubbleEl, avoid, prefer, mark?.cont ? [mark.cont] : []);
     placeBubbleLike(listenEl, avoid);
   }
 
   /** Where Tusk should stand to point at a rect: beside it, never on top of it. */
-  function standNear(r: Rect): { x: number; y: number; flip: boolean } {
+  function standNear(r: Rect, cont: Rect | null = null): { x: number; y: number; flip: boolean } {
     const W = vw(), H = vh();
     const cx = (r.l + r.r) / 2, cy = (r.t + r.b) / 2;
     const pad = 10;
@@ -519,7 +524,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       { x: cx - S / 2, y: r.t - pad - GAP - S, flip: cx < W / 2 ? false : true },
     ];
     const fits = (c: { x: number; y: number }) => c.x >= 4 && c.y >= 4 && c.x + S <= W - 4 && c.y + S <= H - 4;
-    const c = sides.find(fits) ?? sides[0];
+    // Prefer a spot outside the box the target sits in (a popup, a form), so Tusk does not cover its neighbours.
+    const clear = (c: { x: number; y: number }) => !cont || !hit(cont, { l: c.x, t: c.y, r: c.x + S, b: c.y + S });
+    const c = sides.find((x) => fits(x) && clear(x)) ?? sides.find(fits) ?? sides[0];
     return {
       x: clamp(c.x, 4, Math.max(4, W - S - 4)),
       y: clamp(c.y, 4, Math.max(4, H - S - 4)),
@@ -527,15 +534,31 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     };
   }
 
+  /** The nearest bigger box around the target (popup, form), unless that is most of the page. */
+  function containerRect(el: Element): Rect | null {
+    const a = el.getBoundingClientRect();
+    const area = a.width * a.height;
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const r = p.getBoundingClientRect();
+      const pa = r.width * r.height;
+      if (pa > vw() * vh() * 0.6) return null;
+      if (pa > area * 2.2) return { l: r.left, t: r.top, r: r.right, b: r.bottom };
+    }
+    return null;
+  }
+
   function track() {
     rafId = 0;
     if (destroyed || !mark) return;
-    if (mark.el.isConnected) {
-      const r = boxRect(mark.el);
+    const r = boxRect(mark.el);
+    if (!mark.el.isConnected || r.r <= r.l || r.b <= r.t) { ctrl.clear(); return; } // the target went away (popup closed)
+    {
+      const cont = containerRect(mark.el);
       const key = `${r.l},${r.t},${r.r},${r.b},${vw()},${vh()}`;
       if (key !== lastMarkKey) {
         lastMarkKey = key;
-        tuskTarget = standNear(r);
+        tuskTarget = standNear(r, cont);
+        mark.cont = cont;
         layout();
       }
     }
@@ -551,7 +574,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       const inView = r.top >= 0 && r.bottom <= vh() && r.left >= 0 && r.right <= vw();
       if (!inView && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
     } catch { /* detached element */ }
-    tuskTarget = standNear(boxRect(el));
+    const cont = containerRect(el);
+    mark.cont = cont;
+    tuskTarget = standNear(boxRect(el), cont);
     showBubble({ text, src, buttons });
     if (!rafId && typeof requestAnimationFrame === "function") rafId = requestAnimationFrame(track);
   }

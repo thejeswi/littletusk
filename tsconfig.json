@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": ["src", "tests", "scripts", "vite*.ts", "playwright.config.ts"]
+  "include": ["src", "tests", "scripts", "vite*.ts", "playwright.config.ts", "playwright.screenshots.config.ts"]
 }

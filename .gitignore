@@ -5,3 +5,4 @@ playwright-report
 .superpowers
 *.log
 dist-e2e
+.chrome-profile

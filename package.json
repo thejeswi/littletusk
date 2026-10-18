@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "npm run build:e2e && playwright test tests/e2e",
-    "check-clean": "bash scripts/check-clean.sh"
+    "check-clean": "bash scripts/check-clean.sh",
+    "screenshots": "npm run build:e2e && playwright test -c playwright.screenshots.config.ts && cp docs/screenshots/03-pointing.png site/pointing.png && cp docs/screenshots/04-chat-actions.png site/chat.png"
   },
   "dependencies": {
     "@earendil-works/chord": "1.3.0",

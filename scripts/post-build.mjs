@@ -17,3 +17,11 @@ for (const [from, to] of copies) {
   if (!existsSync(from)) throw new Error("missing " + from);
   copyFileSync(from, to);
 }
+
+// Vite also emits onnxruntime's jsep .wasm (~21 MB) into chunks/ because the library names it as a default
+// location. It is never loaded: the Whisper worker sets onnx.wasm.wasmPaths to the extension's wasm/ folder
+// (src/speech/whisper.worker.ts), and the copies in wasm/ are the ones used. Remove the dead copy.
+import { readdirSync, rmSync } from "node:fs";
+if (existsSync(out + "/chunks")) {
+  for (const f of readdirSync(out + "/chunks")) if (/^ort-wasm-.*\.wasm$/.test(f)) rmSync(out + "/chunks/" + f);
+}
