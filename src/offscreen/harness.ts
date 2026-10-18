@@ -311,7 +311,7 @@ export class TuskAgent {
         return void (await this.userInput(`Please help me close the box that is in the way.${what}`, msg.tabId, "chat", true));
       }
       case "log-action":
-        return void (await this.write(KIND.action, { text: msg.text }));
+        return void (await this.write(KIND.action, { text: msg.text, failed: msg.failed === true }));
     }
   }
 
@@ -359,7 +359,9 @@ export class TuskAgent {
           elog("unanswered", settled.reason ?? "");
           const entries = this.view?.value.entries ?? [];
           const lastAssistant = [...entries].reverse().find((e) => e.kind === "pi.assistant");
-          if (lastAssistant?.model?.[0]?.stopReason !== "error") await this.notice(t(this.settings.language, "modelError"));
+          const failed = lastAssistant?.model?.[0];
+          if (failed?.stopReason === "error") console.warn("[littletusk] model error:", String(failed.errorMessage ?? "").replace(/sk-[A-Za-z0-9_-]{8,}/g, "[key]"));
+          else await this.notice(t(this.settings.language, "modelError"));
         }
       },
       (e) => (console.warn("[littletusk] wait failed", e), elog("wait failed", e)),

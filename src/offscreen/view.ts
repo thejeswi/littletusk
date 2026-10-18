@@ -93,7 +93,7 @@ export function buildView(input: {
         items.push({ kind: "notice", id, text: String(e.data?.text ?? "") });
         break;
       case KIND.action:
-        items.push({ kind: "action", id, text: String(e.data?.text ?? ""), state: "done" });
+        items.push({ kind: "action", id, text: String(e.data?.text ?? ""), state: e.data?.failed ? "failed" : "done" });
         break;
       case KIND.confirm:
         items.push({ kind: "confirm", id, question: String(e.data?.question ?? ""), answered: answers.get(id) });
@@ -115,7 +115,7 @@ export function buildView(input: {
             items.push({ kind: "action", id: b.id, text, state });
           }
         });
-        if (m.stopReason === "error") items.push({ kind: "notice", id: `${id}:error`, text: t(lang, "modelError") });
+        if (m.stopReason === "error") items.push({ kind: "notice", id: `${id}:error`, text: explainModelError(lang, m.errorMessage) });
         break;
       }
     }
@@ -155,4 +155,18 @@ export function throttle(fn: () => void, ms: number): { call(): void; flush(): v
       fn();
     },
   };
+}
+
+/** A model failure in plain words, plus a short technical line the family can act on. */
+export function explainModelError(lang: Language, raw: unknown): string {
+  const msg = String(raw ?? "").replace(/sk-[A-Za-z0-9_-]{8,}/g, "[key]").replace(/\s+/g, " ").trim();
+  const low = msg.toLowerCase();
+  const reason =
+    /401|invalid x-api-key|authentication|unauthori[sz]ed|invalid api key|incorrect api key/.test(low) ? t(lang, "errKey")
+    : /credit|balance|billing|payment required|402|insufficient/.test(low) ? t(lang, "errCredit")
+    : /429|rate limit|overloaded|529|503|capacity|too many requests/.test(low) ? t(lang, "errBusy")
+    : /failed to fetch|networkerror|network error|err_internet|timed out|timeout|econn/.test(low) ? t(lang, "errNetwork")
+    : /model.*(not found|does not exist|not available|unknown)|404/.test(low) ? t(lang, "errModel")
+    : t(lang, "modelError");
+  return msg ? `${reason}\n${t(lang, "errDetail", { detail: msg.slice(0, 160) })}` : reason;
 }

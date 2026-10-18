@@ -51,7 +51,9 @@ export function createPageTools(doc: Document, win: Window): PageTools {
     return id;
   };
 
-  const hasLayout = (): boolean => doc.documentElement.getBoundingClientRect().height > 0;
+  // Real browsers always report the viewport size here; jsdom (unit tests) reports 0. Do not use the
+  // page's own height: some sites (video portals) have a zero-height <html> with fixed content.
+  const hasLayout = (): boolean => doc.documentElement.clientHeight > 0 || doc.documentElement.getBoundingClientRect().height > 0;
 
   const isVisible = (el: Element): boolean => {
     for (let n: Element | null = el; n && n !== doc.documentElement; n = n.parentElement) {

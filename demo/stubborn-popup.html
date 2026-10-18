@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beispiel-Magazin</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+  .veil { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .box { position: relative; background: #fff; border-radius: 12px; padding: 28px 32px; width: min(420px, 90vw); text-align: center; }
+  .box .x { position: absolute; right: 8px; top: 6px; border: 0; background: none; font-size: 14px; color: #aaa; cursor: pointer; }
+</style>
+</head>
+<body>
+<header class="site"><b>Beispiel-Magazin</b></header>
+<main class="wrap"><h2>Gartentipps für den Herbst</h2><p>Jetzt ist die beste Zeit, Tulpenzwiebeln zu setzen.</p></main>
+<div class="veil" id="nl"><div class="box" role="dialog" aria-label="Newsletter">
+  <button class="x" id="close" aria-label="Schließen">✕</button>
+  <h3>Newsletter abonnieren!</h3><p>Jede Woche die besten Gartentipps.</p>
+  <p id="err" hidden>Ihre Auswahl konnte nicht gespeichert werden.</p>
+</div></div>
+<span class="demo-badge">Demo</span>
+<script>
+  // Like a site whose "save your choice" fails: closing works for a moment, then the box comes back.
+  const nl = document.getElementById("nl");
+  document.getElementById("close").onclick = () => {
+    nl.style.display = "none";
+    setTimeout(() => { nl.style.display = "flex"; document.getElementById("err").hidden = false; }, 300);
+  };
+</script>
+</body>
+</html>

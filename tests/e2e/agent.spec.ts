@@ -176,3 +176,17 @@ test.describe("Tusk with a scripted model", () => {
     await expect(page.locator(".notice", { hasText: "ask your family" })).toBeVisible({ timeout: 15_000 });
   });
 });
+
+test("look after me: a popup that comes back is reported as still there, not as closed", async ({ context, demoUrl, tusk }) => {
+  await tusk.configure({ mode: "look-after" });
+  await tusk.script([{ text: "The box came back. Let me try another way." }]);
+  const page = await context.newPage();
+  await page.goto(`${demoUrl}/stubborn-popup.html`);
+  const bubble = page.locator(".bubble");
+  await expect(bubble.locator(".btn.yes")).toBeVisible({ timeout: 10_000 });
+  await bubble.locator(".btn.yes").click();
+  await tusk.openChat(page);
+  await expect(page.locator(".chip", { hasText: "still there" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(".chip", { hasText: "Closed the popup" })).toHaveCount(0);
+  await expect(page.locator(".msg.tusk", { hasText: "another way" })).toBeVisible({ timeout: 20_000 }); // the model was asked to help
+});

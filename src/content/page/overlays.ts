@@ -49,6 +49,14 @@ function findClose(el: Element, kind: OverlayInfo["kind"], h: DetectHelpers): st
   return best ? h.idFor(best.node) : undefined;
 }
 
+function coversCentre(doc: Document, el: Element, r: DOMRect, vw: number, vh: number): boolean {
+  const cx = vw / 2, cy = vh / 2;
+  if (!(r.left <= cx && r.right >= cx && r.top <= cy && r.bottom >= cy)) return false;
+  const hit = typeof doc.elementFromPoint === "function" ? doc.elementFromPoint(cx, cy) : null;
+  if (!hit || hit.closest("[data-littletusk-host], [data-littletusk=overlay]")) return true; // Tusk itself is there: judge by the box
+  return el.contains(hit);
+}
+
 export function detectOverlays(doc: Document, win: Window, h: DetectHelpers): OverlayInfo[] {
   const vw = win.innerWidth || 1024;
   const vh = win.innerHeight || 768;
@@ -77,6 +85,9 @@ export function detectOverlays(doc: Document, win: Window, h: DetectHelpers): Ov
       const banner = (isFloating || z >= 100) && r.width >= vw * 0.6 && r.height >= 24 && (r.top <= 8 || r.bottom >= vh - 8) && kind !== "other";
       const dialog = isDialog && area > 0.05;
       if (!(area > 0.25 || banner || dialog)) continue;
+      // Headers, sidebars and corner players are page furniture, not popups: an unnamed overlay
+      // must be a dialog or actually take the clicks in the middle of the screen.
+      if (kind === "other" && !dialog && !coversCentre(doc, el, r, vw, vh)) continue;
     } else if (kind === "other" && !isFloating && !isDialog && !hinted) {
       continue;
     }

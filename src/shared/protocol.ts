@@ -134,7 +134,7 @@ export type ToAgent =
   | { to: "agent"; type: "mic-pause"; paused: boolean } // the person switched the microphone off / on again
   | { to: "agent"; type: "mic-granted" } // the person allowed the microphone in the small permission window
   | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string } // person accepted help in look-after mode
-  | { to: "agent"; type: "log-action"; text: string; tabId?: number }; // an action done locally (no model call), shown in the chat log
+  | { to: "agent"; type: "log-action"; text: string; failed?: boolean; tabId?: number }; // an action done locally (no model call), shown in the chat log
 
 /** What the service worker adds when it forwards a ToAgent message to the offscreen document. */
 export type RelayedToAgent = ToAgent & { relayed: true };

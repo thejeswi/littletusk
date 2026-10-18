@@ -47,6 +47,22 @@ function main() {
     other: "offerGeneric",
   };
 
+  /** Waits up to 2 s for a popup to disappear (removed, hidden or zero size). */
+  async function popupGone(overlayId: string): Promise<boolean> {
+    const shown = () => {
+      const el = tools.element(overlayId);
+      if (!el || !el.isConnected) return false;
+      const st = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return st.display !== "none" && st.visibility !== "hidden" && Number(st.opacity) > 0.05 && r.width > 0 && r.height > 0;
+    };
+    for (let waited = 0; waited <= 2000; waited += 250) {
+      if (!shown()) return true;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return !shown();
+  }
+
   async function acceptHelp(overlayId: string) {
     const o = offered.get(overlayId);
     if (!o || !settings) return;
@@ -56,8 +72,12 @@ function main() {
       if (d && !d.irreversible && !looksIrreversible(d.name)) {
         const r = await tools.run({ op: "click", id: o.closeId }, { confirmed: false });
         if (r.ok) {
-          void send({ to: "agent", type: "log-action", text: t(lang, "actClosed") });
-          return;
+          // Only claim it once it is true: some sites keep or bring back their popup.
+          if (await popupGone(o.id)) {
+            void send({ to: "agent", type: "log-action", text: t(lang, "actClosed") });
+            return;
+          }
+          void send({ to: "agent", type: "log-action", text: t(lang, "actCloseStillThere"), failed: true });
         }
       }
     }
