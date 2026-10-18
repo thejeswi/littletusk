@@ -10,7 +10,7 @@ import { asksToDoIt, saysStillBroken } from "./gate";
 import { createTuskModels, type TuskModels } from "./models";
 import { INITIAL_STATE, KIND, LedgerDoc, StateDoc, type TuskState } from "./state";
 import { createExtension } from "./tools";
-import { buildView, throttle, type ViewValueLike } from "./view";
+import { buildView, explainModelError, throttle, type ViewValueLike } from "./view";
 
 const ctx = BACKGROUND_CONTEXT;
 const IDLE_RESET_MS = 6 * 3600 * 1000;
@@ -351,17 +351,23 @@ export class TuskAgent {
     this.watchSubmission(sub);
   }
 
-  private watchSubmission(sub: { wait(c: typeof ctx): Promise<{ status: string; reason?: string }> }) {
+  private watchSubmission(sub: { wait(c: typeof ctx): Promise<{ status: string; reason?: string; detail?: unknown }> }) {
     void sub.wait(ctx).then(
       async (settled) => {
         if (settled.status === "unanswered" && settled.reason !== "aborted" && settled.reason !== "withdrawn") {
           console.warn("[littletusk] run ended without an answer:", settled.reason);
           elog("unanswered", settled.reason ?? "");
+          const lang = this.settings.language;
           const entries = this.view?.value.entries ?? [];
-          const lastAssistant = [...entries].reverse().find((e) => e.kind === "pi.assistant");
-          const failed = lastAssistant?.model?.[0];
-          if (failed?.stopReason === "error") console.warn("[littletusk] model error:", String(failed.errorMessage ?? "").replace(/sk-[A-Za-z0-9_-]{8,}/g, "[key]"));
-          else await this.notice(t(this.settings.language, "modelError"));
+          const last = entries[entries.length - 1];
+          const failed = last?.kind === "pi.assistant" ? last.model?.[0] : undefined;
+          // pi-durable hands the real reason over as `detail`; a failed answer in the transcript carries its own.
+          const detail = String(settled.detail ?? failed?.errorMessage ?? "").replace(/sk-[A-Za-z0-9_-]{8,}/g, "[key]");
+          console.warn("[littletusk] model error:", settled.reason, detail);
+          if (failed?.stopReason === "error") return; // the chat already shows this failure, explained (view.ts)
+          await this.notice(settled.reason === "no_model"
+            ? `${t(lang, "errModel")}\n${t(lang, "errDetail", { detail: `${this.settings.provider} / ${this.settings.model}` })}`
+            : explainModelError(lang, `${this.settings.provider}: ${detail}`));
         }
       },
       (e) => (console.warn("[littletusk] wait failed", e), elog("wait failed", e)),

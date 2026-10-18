@@ -1,5 +1,6 @@
 import { type Language, type Mode, type Settings } from "../shared/protocol";
 import { PROVIDERS, modelsFor, providerInfo } from "../shared/providers";
+import { keyMismatch } from "../shared/key-hint";
 import { decodeSetupConfig, encodeSetupConfig, loadSettings, saveSettings, type SetupConfig } from "../shared/settings";
 
 type UiLang = "en" | "de";
@@ -29,6 +30,7 @@ const S = {
     modeShow: "Show me how", modeLook: "Look after me",
     speak: "Read answers aloud",
     firstName: "The person's first name (optional)",
+    keyMismatch: "But this key looks like a {key} key, and the provider is {selected}. Please choose {key} above, or paste a {selected} key.",
     save: "Save", saved: "Saved.", saveBad: "Please check the key and the limit.",
     linkTitle: "Make a setup link",
     linkText: "Build a link that sets up Little Tusk on another computer. Send it by email.",
@@ -61,6 +63,7 @@ const S = {
     modeShow: "Zeig mir, wie", modeLook: "Pass auf mich auf",
     speak: "Antworten vorlesen",
     firstName: "Vorname der Person (optional)",
+    keyMismatch: "Aber dieser Schlüssel sieht nach {key} aus, eingestellt ist {selected}. Bitte wählen Sie oben {key} oder fügen Sie einen {selected}-Schlüssel ein.",
     save: "Speichern", saved: "Gespeichert.", saveBad: "Bitte prüfen Sie den Schlüssel und das Limit.",
     linkTitle: "Einrichtungslink erstellen",
     linkText: "Erstellt einen Link, der Little Tusk auf einem anderen Computer einrichtet. Schicken Sie ihn per E-Mail.",
@@ -241,7 +244,11 @@ async function renderForm(): Promise<void> {
       speakAnswers: $<HTMLInputElement>("speak").checked, setupDone: true,
       ...(c.name !== undefined ? { name: c.name } : { name: "" }),
     } as Partial<Settings>);
-    msg.className = "ok"; msg.textContent = t().saved;
+    const other = keyMismatch(c.provider, c.apiKey);
+    if (other) {
+      msg.className = "err";
+      msg.textContent = `${t().saved} ${t().keyMismatch.replace("{key}", providerInfo(other).label).replace("{selected}", providerInfo(c.provider).label)}`;
+    } else { msg.className = "ok"; msg.textContent = t().saved; }
   };
   let link = "";
   $("makeLink").onclick = () => {

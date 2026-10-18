@@ -11,6 +11,6 @@ describe("model errors in plain words", () => {
     expect(explainModelError("en", "")).toMatch(/could not think/);
   });
   it("never shows a key", () => {
-    expect(explainModelError("en", "bad key sk-ant-api03-abcdefghijklmnop")).not.toContain("abcdefgh");
+    expect(explainModelError("en", "bad key " + "sk-" + "ant-api03-" + "abcdefghijklmnop")).not.toContain("abcdefgh");
   });
 });
