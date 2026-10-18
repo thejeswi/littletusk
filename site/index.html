@@ -17,13 +17,28 @@
     <p>Tusk asks before anything that cannot be undone, never sees your passwords, never downloads files and warns about scams. Everything stays in your browser. Speech is understood on your computer. Only the model provider you choose is contacted, and a monthly spending limit is enforced.</p>
     <p>English, Deutsch, Español and English (India).</p>
   </section>
-  <section>
-    <h2>How to get it (for now)</h2>
+  <section id="install">
+    <h2>How to install it</h2>
+    <p>Little Tusk is not in the Chrome Web Store yet, so for now you install it by hand. It takes about two minutes and works in Chrome, Chromium, Edge and Brave on Windows, Mac and Linux.</p>
     <ol>
-      <li>Download the extension from <a href="https://github.com/thejeswi/littletusk">github.com/thejeswi/littletusk</a> and build it (<code>npm install</code>, then <code>npm run build</code>).</li>
-      <li>In Chrome open <code>chrome://extensions</code> and switch on "Developer mode".</li>
-      <li>Click "Load unpacked" and choose the <code>dist</code> folder.</li>
+      <li><strong>Download.</strong> Go to the <a href="https://github.com/thejeswi/littletusk/releases/latest">latest release</a> and download the file called <code>littletusk-v….zip</code> (about 9 MB).</li>
+      <li><strong>Unzip it</strong> into a folder you will keep, for example in your Documents. Chrome reads Little Tusk from that folder every time it starts, so please do not delete or move it afterwards.</li>
+      <li><strong>Open the extensions page.</strong> Type <code>chrome://extensions</code> in the address bar of your browser and press Enter. In Edge it is <code>edge://extensions</code>.</li>
+      <li><strong>Switch on "Developer mode"</strong> with the switch in the top right corner.</li>
+      <li><strong>Click "Load unpacked"</strong> and choose the folder you unzipped (the one with <code>manifest.json</code> inside).</li>
+      <li><strong>Open any website.</strong> A small elephant appears in the bottom right corner. Click it and say hello.</li>
     </ol>
+    <p>Chrome shows a small reminder about "developer mode extensions" when it starts. That is normal for extensions installed this way, and it goes away once Little Tusk is in the Web Store.</p>
+    <p>Then someone needs to give Tusk a key for the model provider: click Tusk, then <em>Settings</em>, then <em>Family settings</em>. Or send a setup link, see below.</p>
+    <details>
+      <summary>Prefer to build it yourself?</summary>
+      <p>Get the code from <a href="https://github.com/thejeswi/littletusk">github.com/thejeswi/littletusk</a>, run <code>npm install</code> and <code>npm run build</code> (Node 22 or newer), and load the <code>dist</code> folder in the last two steps above.</p>
+    </details>
+    <details>
+      <summary>Updating to a newer version</summary>
+      <p>Download the new zip and unzip it into the <em>same</em> folder, replacing the old files. Then open <code>chrome://extensions</code> and press the circular "reload" arrow on the Little Tusk card. Your settings and chats stay.</p>
+      <p>Chrome ties the extension to its folder. If you load a different folder, Chrome treats it as a new extension and Tusk has to be set up again.</p>
+    </details>
   </section>
   <section>
     <h2>Setting it up for someone else?</h2>
