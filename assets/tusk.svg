@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 135" role="img" aria-label="Tusk the baby elephant">
+  <ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+  <ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+  <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
+  <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
+  <path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
+  <path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <circle cx="47" cy="52" r="3" fill="#2b2b2b"/>
+  <circle cx="73" cy="52" r="3" fill="#2b2b2b"/>
+  <circle cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+  <circle cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+</svg>
