@@ -32,6 +32,24 @@ button.tusk.pointing .pose-point{display:block}
 .bubble .txt{white-space:pre-wrap;overflow-wrap:anywhere}
 .bubble .btns{display:flex;gap:10px;margin-top:10px}
 .listen{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.listen{gap:10px;max-width:min(360px,calc(100vw - 16px))}
+.listen .ltitle{font-size:18px;font-weight:700;color:#1f2933}
+.listen.paused .wave{opacity:.25}
+.lctl{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
+.switch{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:6px 14px;border:2px solid #99bbbb;border-radius:999px;
+  background:#fff;color:#1f2933;font:inherit;font-size:16px;cursor:pointer}
+.switch:focus-visible,.btn.stop:focus-visible{outline:3px solid #ffb703;outline-offset:2px}
+.switch:disabled{opacity:.5;cursor:default}
+.sw-label{font-weight:600}
+.sw-track{position:relative;display:inline-block;width:54px;height:30px;border-radius:15px;background:#2f9e6d;transition:background .15s}
+.sw-knob{position:absolute;top:3px;left:27px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}
+.switch.off .sw-track{background:#9aa5b1}
+.switch.off .sw-knob{left:3px}
+.sw-state{min-width:2.5em;text-align:left;font-weight:700}
+.btn.stop{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:6px 18px;border:0;border-radius:999px;
+  background:#b42318;color:#fff;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.btn.stop:disabled{opacity:.5;cursor:default}
+.stop-icon{display:inline-block;width:14px;height:14px;border-radius:2px;background:#fff}
 .listen .hint{font-size:14px;color:#52606d}
 .wave{display:flex;align-items:center;gap:5px;height:44px}
 .wave i{display:block;width:7px;height:8px;border-radius:4px;background:#2f9e6d;transition:height .12s}
@@ -97,7 +115,7 @@ button.tusk.pointing .pose-point{display:block}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,183,3,.45)}50%{box-shadow:0 0 0 10px rgba(255,183,3,.12)}}
 
 @media (prefers-reduced-motion:reduce){
-  button.tusk,.bubble,.listen{transition:none}
+  button.tusk,.bubble,.listen,.sw-track,.sw-knob{transition:none}
   button.tusk .breathe,.hl,.ask-frame{animation:none}
   .wave i{transition:none}
 }

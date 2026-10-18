@@ -3,6 +3,9 @@
 // change it only on purpose, and update all sides together.
 
 export type Language = "en" | "de" | "es" | "en-IN";
+/** What the listening bubble shows. */
+export type MicPhase = "starting" | "listening" | "paused" | "transcribing";
+
 export type Mode = "show" | "look-after"; // "Show me how" | "Look after me"
 
 export interface Settings {
@@ -128,6 +131,7 @@ export type ToAgent =
   | { to: "agent"; type: "settings-changed" }
   | { to: "agent"; type: "mic-start"; tabId?: number }
   | { to: "agent"; type: "mic-stop" }
+  | { to: "agent"; type: "mic-pause"; paused: boolean } // the person switched the microphone off / on again
   | { to: "agent"; type: "mic-granted" } // the person allowed the microphone in the small permission window
   | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string } // person accepted help in look-after mode
   | { to: "agent"; type: "log-action"; text: string; tabId?: number }; // an action done locally (no model call), shown in the chat log
@@ -140,7 +144,7 @@ export type FromAgent =
   | { to: "sw"; type: "page"; tabId: number; cmd: PageCommand; reqId: string }
   | { to: "sw"; type: "broadcast-view"; view: ChatView }
   | { to: "sw"; type: "speak"; text: string; lang: Language }
-  | { to: "sw"; type: "mic-level"; level: number; listening: boolean } // for the listening wave
+  | { to: "sw"; type: "mic-level"; level: number; listening: boolean; phase?: MicPhase; progress?: string } // for the listening bubble
   | { to: "sw"; type: "open-mic-permission" } // offscreen pages cannot ask for the mic: open a small window that can
   | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string }
   | { to: "sw"; type: "get-settings" } // full settings including the key; only the offscreen document may ask
@@ -158,7 +162,7 @@ export type FromContent =
 export type ToContent =
   | { to: "content"; type: "page"; cmd: PageCommand }
   | { to: "content"; type: "view"; view: ChatView }
-  | { to: "content"; type: "mic"; level: number; listening: boolean }
+  | { to: "content"; type: "mic"; level: number; listening: boolean; phase?: MicPhase; progress?: string }
   | { to: "content"; type: "settings"; settings: Omit<Settings, "apiKey"> };
 
 /** URLs Tusk may open or act on. No allowlist of sites, only web schemes. */

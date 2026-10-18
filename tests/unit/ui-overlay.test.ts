@@ -16,7 +16,7 @@ beforeEach(() => {
     return root;
   });
   cb = {
-    onSend: vi.fn(), onAnswer: vi.fn(), onMicStart: vi.fn(), onMicStop: vi.fn(), onNewTopic: vi.fn(),
+    onSend: vi.fn(), onAnswer: vi.fn(), onMicStart: vi.fn(), onMicStop: vi.fn(), onMicPause: vi.fn(), onNewTopic: vi.fn(),
     onSettingsChange: vi.fn(), onTuck: vi.fn(), onOpenFamilySettings: vi.fn(), onAcceptOverlayHelp: vi.fn(),
   };
   ctrl = mountOverlay(cb, settings);

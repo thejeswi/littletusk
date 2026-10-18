@@ -31,14 +31,15 @@ export interface Tusk {
 
 // Usage: import { test, expect } from "./fixtures"; test("...", async ({ context, extensionId, demoUrl, tusk }) => {...})
 // Needs `npm run build:e2e` first. Runs headless (new headless supports extensions).
-export const test = base.extend<{ context: BrowserContext; extensionId: string; demoUrl: string; tusk: Tusk }>({
-  // eslint-disable-next-line no-empty-pattern
-  context: async ({}, use) => {
+export const test = base.extend<{ extraArgs: string[]; context: BrowserContext; extensionId: string; demoUrl: string; tusk: Tusk }>({
+  /** Extra Chromium flags for one spec, e.g. a fake microphone: test.use({ extraArgs: [...] }). */
+  extraArgs: [[], { option: true }],
+  context: async ({ extraArgs }, use) => {
     const userDataDir = await mkdtemp(join(tmpdir(), "littletusk-"));
     const context = await chromium.launchPersistentContext(userDataDir, {
       channel: "chromium",
       headless: true,
-      args: [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`],
+      args: [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`, ...extraArgs],
     });
     await use(context);
     await context.close();

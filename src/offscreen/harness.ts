@@ -37,6 +37,7 @@ const elog = (...parts: unknown[]) => {
 interface SpeechLike {
   start(lang: string): Promise<void>;
   stop(): Promise<string>;
+  pause(paused: boolean): void;
 }
 
 export class TuskAgent {
@@ -297,6 +298,8 @@ export class TuskAgent {
         return void (await this.micStart(msg.tabId));
       case "mic-stop":
         return void (await this.micStop());
+      case "mic-pause":
+        return void this.speech?.pause(msg.paused);
       case "mic-granted":
         return void (await this.micStart(this.taskTab || undefined));
       case "overlay-help": {
@@ -409,16 +412,24 @@ export class TuskAgent {
     const mod = (await loader()) as { createSpeech(o: unknown): SpeechLike };
     this.speech = mod.createSpeech({
       wasmBase: chrome.runtime.getURL("wasm/"),
-      onLevel: (level: number) => void sendSw({ to: "sw", type: "mic-level", level, listening: true }),
+      onLevel: (level: number) => void sendSw({ to: "sw", type: "mic-level", level, listening: true, phase: "listening" }),
       onState: (state: string, detail?: string) => {
-        if (state === "listening") void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true });
-        else if (state === "idle" || state === "error") {
+        const lang = this.settings.language;
+        if (state === "listening" || state === "paused" || state === "transcribing") {
+          void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: state, progress: state === "transcribing" ? detail : undefined });
+        } else if (state === "loading") {
+          void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: "starting" });
+        } else if (state === "idle" || state === "error") {
           void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
-          if (state === "error" && detail === "MIC_PERMISSION") {
+          if (state === "idle" && !detail && !this.micSubmitted) {
+            this.micSubmitted = true;
+            void this.notice(t(lang, "noSpeech"));
+          } else if (state === "error" && detail === "MIC_SILENT") void this.notice(t(lang, "micSilent"));
+          else if (state === "error" && detail === "MIC_PERMISSION") {
             // An offscreen document cannot show the permission prompt; a small extension window can.
             void this.notice(t(this.settings.language, "micAllow"));
             void sendSw({ to: "sw", type: "open-mic-permission" });
-          } else if (state === "error") void this.notice(t(this.settings.language, "micError"));
+          } else if (state === "error") void this.notice(t(lang, "micError"));
           else if (detail && !this.micSubmitted) {
             this.micSubmitted = true;
             void this.userInput(detail, this.taskTab || undefined, "voice");
@@ -439,6 +450,8 @@ export class TuskAgent {
       return;
     }
     this.micSubmitted = false;
+    // Show the bubble at once: finding a working microphone takes a moment.
+    void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: "starting" });
     await speech.start(this.settings.language);
   }
 

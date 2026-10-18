@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { EndpointDetector, concat, levelFromRms, resampleTo16k, rms, whisperLanguage } from "../../src/speech/audio";
+import { EndpointDetector, SILENCE_SECONDS, concat, levelFromRms, resampleTo16k, rms, whisperLanguage } from "../../src/speech/audio";
 
 const tone = (n: number, amp: number) => Float32Array.from({ length: n }, (_, i) => amp * Math.sin(i / 5));
 
@@ -29,15 +29,15 @@ describe("speech helpers", () => {
   it("concatenates", () => {
     expect([...concat([new Float32Array([1]), new Float32Array([2, 3])])]).toEqual([1, 2, 3]);
   });
-  it("stops after 2 s of silence following speech, not before speech", () => {
+  it("stops after SILENCE_SECONDS of silence following speech, not sooner and not before speech", () => {
     const d = new EndpointDetector(16000);
     const silence = new Float32Array(1600);
     for (let i = 0; i < 40; i++) expect(d.push(silence)).toBe(false); // 4 s of silence, no speech yet
     expect(d.heardSpeech).toBe(false);
     expect(d.push(tone(1600, 0.3))).toBe(false);
-    let stopped = false;
-    for (let i = 0; i < 25 && !stopped; i++) stopped = d.push(silence);
-    expect(stopped).toBe(true);
+    const chunks = SILENCE_SECONDS * 10; // 0.1 s chunks
+    for (let i = 0; i < chunks - 1; i++) expect(d.push(silence)).toBe(false);
+    expect(d.push(silence)).toBe(true);
   });
   it("stops at the 30 s maximum", () => {
     const d = new EndpointDetector(16000);

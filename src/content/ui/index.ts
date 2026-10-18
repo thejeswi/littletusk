@@ -1,6 +1,6 @@
 // On-page overlay: the floating baby elephant "Tusk", its menu, chat, settings and target marks.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
-import type { ChatItem, ChatView, Language, Mode, Settings } from "../../shared/protocol";
+import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
 import { LANGUAGE_NAMES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
 
@@ -13,6 +13,7 @@ export interface OverlayCallbacks {
   onAnswer(itemId: string, yes: boolean): void;
   onMicStart(): void;
   onMicStop(): void;
+  onMicPause(paused: boolean): void; // the microphone switch in the listening bubble
   onNewTopic(): void;
   onSettingsChange(patch: Partial<Pick<Settings, "language" | "mode" | "speakAnswers">>): void;
   onTuck(scope: "site" | "hour"): void;
@@ -23,7 +24,7 @@ export interface OverlayCallbacks {
 export interface OverlayController {
   setView(view: ChatView): void;
   setSettings(s: PublicSettings): void;
-  setMic(level: number, listening: boolean): void;
+  setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string): void;
   say(text: string): void;
   pointAt(el: Element, say: string): void;
   spotlight(el: Element, say: string): void;
@@ -97,6 +98,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   let bubble: Bubble | null = null;
   let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
   let listening = false;
+  let micPhase: MicPhase = "listening";
+  let micProgress: string | undefined; // speech model download, first use only
   let phase = 0;
   let rafId = 0;
   let lastMarkKey = "";
@@ -137,9 +140,27 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   // listening bubble
   const listenEl = h("div", "listen", { role: "status" }); listenEl.hidden = true;
   const waveBars = Array.from({ length: 7 }, () => h("i"));
-  const listenTxt = h("div"); const listenHint = h("div", "hint");
-  listenEl.append(listenTxt, h("div", "wave", undefined, ...waveBars), listenHint);
-  label(listenTxt, "listening"); label(listenHint, "tapToStop");
+  const listenTxt = h("div", "ltitle"); const listenHint = h("div", "hint");
+  // A labelled on/off switch and a Stop button: plain words, big targets.
+  const micSwitch = h("button", "switch", { type: "button", role: "switch" });
+  const swLabel = h("span", "sw-label"); const swTrack = h("span", "sw-track"); const swState = h("span", "sw-state");
+  swTrack.append(h("span", "sw-knob"));
+  micSwitch.append(swLabel, swTrack, swState);
+  label(swLabel, "micSwitch");
+  micSwitch.addEventListener("click", () => {
+    const pause = micPhase !== "paused";
+    micPhase = pause ? "paused" : "listening";
+    cb.onMicPause(pause);
+    applyMic();
+  });
+  const stopBtn = h("button", "btn stop", { type: "button" });
+  const stopTxt = h("span", "stop-txt");
+  stopBtn.append(h("span", "stop-icon"), stopTxt);
+  label(stopTxt, "stopSend");
+  stopBtn.addEventListener("click", () => { if (listening) toggleMic(); });
+  const listenCtl = h("div", "lctl", undefined, micSwitch, stopBtn);
+  listenEl.append(listenTxt, h("div", "wave", undefined, ...waveBars), listenCtl, listenHint);
+  label(listenHint, "tapToStop");
 
   // menu
   const menu = h("div", "menu", { role: "menu" }); menu.hidden = true;
@@ -290,6 +311,17 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     micBtn.classList.toggle("on", listening);
     micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart"));
     listenEl.hidden = !listening;
+    const paused = micPhase === "paused";
+    listenTxt.textContent = t(lang(), paused ? "micPausedTitle" : micPhase === "transcribing" ? "transcribing"
+      : micPhase === "starting" ? "micStarting" : "listening");
+    listenHint.textContent = micPhase === "transcribing" && micProgress
+      ? t(lang(), "modelDownload", { pct: micProgress }) : t(lang(), "tapToStop");
+    micSwitch.setAttribute("aria-checked", String(!paused));
+    micSwitch.classList.toggle("off", paused);
+    swState.textContent = t(lang(), paused ? "micOff" : "micOn");
+    micSwitch.disabled = micPhase === "transcribing" || micPhase === "starting";
+    stopBtn.disabled = micPhase === "transcribing";
+    listenEl.classList.toggle("paused", paused);
     layout();
   }
 
@@ -650,8 +682,11 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       viewSeen = true;
     },
     setSettings(s) { settings = { ...s }; applySettings(); },
-    setMic(level, l) {
+    setMic(level, l, ph, progress) {
       listening = l;
+      if (ph) micPhase = ph;
+      else if (!l) micPhase = "listening";
+      micProgress = ph === "transcribing" ? progress : undefined;
       phase += 1;
       waveBars.forEach((b, i) => {
         const amp = 0.35 + 0.65 * Math.abs(Math.sin(phase * 0.9 + i * 0.8));

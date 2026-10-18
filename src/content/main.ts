@@ -89,6 +89,7 @@ function main() {
         onAnswer: (itemId, yes) => void send({ to: "agent", type: "answer", itemId, yes }),
         onMicStart: () => void send({ to: "agent", type: "mic-start" }),
         onMicStop: () => void send({ to: "agent", type: "mic-stop" }),
+        onMicPause: (paused) => void send({ to: "agent", type: "mic-pause", paused }),
         onNewTopic: () => void send({ to: "agent", type: "new-topic" }),
         onSettingsChange: (patch) => void send({ to: "sw", type: "patch-settings", patch }),
         onTuck: (scope) => void send({ to: "sw", type: "tuck", scope }),
@@ -164,7 +165,7 @@ function main() {
         apply(msg.settings);
         return false;
       case "mic":
-        ctrl?.setMic(msg.level, msg.listening);
+        ctrl?.setMic(msg.level, msg.listening, msg.phase, msg.progress);
         return false;
       case "page":
         onPage(msg.cmd).then(sendResponse, (e) => sendResponse({ ok: false, error: `ERROR: ${String((e as Error)?.message ?? e)}` }));

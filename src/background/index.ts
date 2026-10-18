@@ -208,7 +208,7 @@ async function handleSw(msg: SwMessage, sender: chrome.runtime.MessageSender): P
         url: chrome.runtime.getURL("pages/setup.html#mic"), type: "popup", width: 520, height: 460, focused: true,
       }));
     case "mic-level":
-      return void (await toAllTabs({ to: "content", type: "mic", level: msg.level, listening: msg.listening }));
+      return void (await toAllTabs({ to: "content", type: "mic", level: msg.level, listening: msg.listening, phase: msg.phase, progress: msg.progress }));
     case "e2e-get":
       if (__E2E__) return { value: (await chrome.storage.local.get(msg.key))[msg.key] };
       return undefined;

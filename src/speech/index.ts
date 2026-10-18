@@ -3,7 +3,7 @@ import type { Language } from "../shared/protocol";
 import { EndpointDetector, TARGET_RATE, concat, levelFromRms, resampleTo16k, rms, whisperLanguage } from "./audio";
 import type { WorkerIn, WorkerOut } from "./protocol";
 
-export type SpeechState = "loading" | "listening" | "transcribing" | "idle" | "error";
+export type SpeechState = "loading" | "listening" | "paused" | "transcribing" | "idle" | "error";
 export interface SpeechOptions {
   wasmBase: string; // chrome.runtime.getURL("wasm/")
   onLevel(level: number): void;
@@ -22,7 +22,8 @@ export function createSpeech(opts: SpeechOptions) {
     ready = new Promise<void>((resolve, reject) => {
       worker!.onmessage = (e: MessageEvent<WorkerOut>) => {
         const m = e.data;
-        if (m.type === "progress") opts.onState("loading", `${m.percent}%`);
+        // Progress never overrides listening/paused; while writing down it shows how far the download is.
+        if (m.type === "progress") { if (transcribingNow) opts.onState("transcribing", `${m.percent}%`); else if (!session) opts.onState("loading", `${m.percent}%`); }
         else if (m.type === "ready") resolve();
         else if (m.type === "result") { pending.get(m.id)?.resolve(m.text); pending.delete(m.id); }
         else if (m.type === "error") {
@@ -38,8 +39,61 @@ export function createSpeech(opts: SpeechOptions) {
     return ready;
   }
 
+  // ---- choosing a microphone ----
+  // Some computers have a "default" input that delivers pure digital silence (a wrong system
+  // default). A real microphone always has some noise, so exact zeros mean "dead input": try the
+  // others and remember the first one that hears anything.
+  const MIC_KEY = "littletusk.micDeviceId";
+  async function peakOf(deviceId: string | undefined, ms = 1200): Promise<number> {
+    const s = await navigator.mediaDevices.getUserMedia({
+      audio: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    const ctx = new AudioContext();
+    try {
+      const an = ctx.createAnalyser();
+      an.fftSize = 2048;
+      ctx.createMediaStreamSource(s).connect(an);
+      const buf = new Float32Array(an.fftSize);
+      let peak = 0;
+      for (let waited = 0; waited < ms; waited += 100) {
+        await new Promise((r) => setTimeout(r, 100));
+        an.getFloatTimeDomainData(buf);
+        for (const v of buf) peak = Math.max(peak, Math.abs(v));
+      }
+      return peak;
+    } finally {
+      s.getTracks().forEach((t) => t.stop());
+      void ctx.close().catch(() => {});
+    }
+  }
+  async function liveDeviceId(): Promise<string | undefined> {
+    let saved: string | undefined;
+    try { saved = localStorage.getItem(MIC_KEY) ?? undefined; } catch { /* no storage */ }
+    const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
+    if (saved && !devices.some((d) => d.deviceId === saved)) saved = undefined;
+    const order = [saved, undefined, ...devices.map((d) => d.deviceId).filter((id) => id !== "default" && id !== saved)];
+    for (const id of order) {
+      try {
+        if ((await peakOf(id)) > 0) {
+          try { if (id) localStorage.setItem(MIC_KEY, id); else localStorage.removeItem(MIC_KEY); } catch { /* fine */ }
+          return id;
+        }
+      } catch (e) {
+        const name = (e as DOMException)?.name;
+        // Not allowed is about permission, not about this microphone: let the caller ask for it.
+        if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") throw e;
+        /* that one cannot be opened: try the next */
+      }
+    }
+    // Nothing heard anywhere: listen on the saved or default one anyway. If the person is not heard,
+    // the session ends with "I did not hear anything" instead of refusing to start.
+    return saved;
+  }
+
+  let transcribingNow = false;
+
   // ---- recording session ----
-  let session: null | { finish(): Promise<string> } = null;
+  let session: null | { finish(): Promise<string>; pause(p: boolean): void } = null;
   // Transcript of a session that ended by itself (silence / 30 s); stop() hands it over once.
   let lastFinish: Promise<string> | null = null;
 
@@ -48,10 +102,13 @@ export function createSpeech(opts: SpeechOptions) {
     lastFinish = null;
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const deviceId = await liveDeviceId();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: deviceId ? { deviceId: { exact: deviceId } } : true });
     } catch (e) {
       const name = (e as DOMException)?.name;
-      opts.onState("error", name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError" ? "MIC_PERMISSION" : "MIC_UNAVAILABLE");
+      opts.onState("error",
+        name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError" ? "MIC_PERMISSION"
+        : name === "MicSilent" ? "MIC_SILENT" : "MIC_UNAVAILABLE");
       return;
     }
     void ensureWorker().catch((e) => opts.onState("error", String(e.message ?? e)));
@@ -69,8 +126,9 @@ export function createSpeech(opts: SpeechOptions) {
     let acc = 0;
     const cleanup: Array<() => void> = [];
 
+    let paused = false;
     const onChunk = (chunk: Float32Array) => {
-      if (stopped) return;
+      if (stopped || paused) return; // microphone switched off: nothing is kept
       chunks.push(chunk);
       acc += chunk.length;
       if (acc >= rate / 20) { // ~20 updates per second
@@ -95,6 +153,7 @@ export function createSpeech(opts: SpeechOptions) {
         let text = "";
         if (detector.heardSpeech && audio.length > TARGET_RATE / 4) {
           opts.onState("transcribing");
+          transcribingNow = true;
           try {
             await ensureWorker();
             const id = nextId++;
@@ -104,10 +163,12 @@ export function createSpeech(opts: SpeechOptions) {
               worker!.postMessage(msg, [audio.buffer]);
             });
           } catch (e) {
+            transcribingNow = false;
             opts.onState("error", String((e as Error).message ?? e));
             resolveText("");
             return "";
           }
+          transcribingNow = false;
         }
         text = text.trim();
         opts.onState("idle", text); // detail = transcript, for sessions that auto-stopped
@@ -137,7 +198,13 @@ export function createSpeech(opts: SpeechOptions) {
       mute.connect(ctx.destination);
       cleanup.push(() => { sp.onaudioprocess = null; source.disconnect(); sp.disconnect(); mute.disconnect(); });
     }
-    session = { finish };
+    const pause = (p: boolean) => {
+      if (stopped || p === paused) return;
+      paused = p;
+      if (p) opts.onLevel(0);
+      opts.onState(p ? "paused" : "listening");
+    };
+    session = { finish, pause };
     opts.onState("listening");
     void textPromise;
   }
@@ -147,6 +214,11 @@ export function createSpeech(opts: SpeechOptions) {
     const p = lastFinish;
     lastFinish = null;
     return p ? p : "";
+  }
+
+  /** Switch the microphone off (true) or on again (false) without ending the recording. */
+  function pause(p: boolean): void {
+    session?.pause(p);
   }
 
   async function preload(): Promise<void> {
@@ -168,5 +240,5 @@ export function createSpeech(opts: SpeechOptions) {
     pending.clear();
   }
 
-  return { start, stop, preload, dispose };
+  return { start, stop, pause, preload, dispose };
 }

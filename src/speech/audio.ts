@@ -3,7 +3,7 @@ import type { Language } from "../shared/protocol";
 
 export const TARGET_RATE = 16000;
 export const MAX_SECONDS = 30;
-export const SILENCE_SECONDS = 2;
+export const SILENCE_SECONDS = 3; // seniors pause to think; the Stop button ends it sooner
 /** RMS above this counts as speech (input is -1..1 floats). */
 export const SPEECH_RMS = 0.015;
 
