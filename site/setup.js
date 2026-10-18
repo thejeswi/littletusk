@@ -7,6 +7,7 @@
     google: "https://aistudio.google.com/apikey",
     mistral: "https://console.mistral.ai/api-keys",
     openrouter: "https://openrouter.ai/settings/keys",
+    deepseek: "https://platform.deepseek.com/api_keys",
   };
   var BASE = location.origin + location.pathname;
   var $ = function (id) { return document.getElementById(id); };

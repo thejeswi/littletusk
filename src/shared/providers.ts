@@ -3,6 +3,7 @@ import { OPENAI_MODELS } from "@earendil-works/pi-ai/providers/openai.models";
 import { GOOGLE_MODELS } from "@earendil-works/pi-ai/providers/google.models";
 import { MISTRAL_MODELS } from "@earendil-works/pi-ai/providers/mistral.models";
 import { OPENROUTER_MODELS } from "@earendil-works/pi-ai/providers/openrouter.models";
+import { DEEPSEEK_MODELS } from "@earendil-works/pi-ai/providers/deepseek.models";
 
 export interface ProviderInfo {
   id: string;
@@ -25,6 +26,7 @@ export const PROVIDERS: ProviderInfo[] = [
   { id: "google", label: "Google (Gemini)", keyHelpUrl: "https://aistudio.google.com/apikey", model: "gemini-3.5-flash-lite", strongModel: "gemini-3.1-pro-preview" },
   { id: "mistral", label: "Mistral", keyHelpUrl: "https://console.mistral.ai/api-keys", model: "mistral-small-latest", strongModel: "mistral-large-latest" },
   { id: "openrouter", label: "OpenRouter", keyHelpUrl: "https://openrouter.ai/settings/keys", model: "anthropic/claude-haiku-5.5", strongModel: "anthropic/claude-sonnet-5.5" },
+  { id: "deepseek", label: "DeepSeek", keyHelpUrl: "https://platform.deepseek.com/api_keys", model: "deepseek-flash", strongModel: "deepseek-v4-pro" },
 ];
 
 export function providerInfo(id: string): ProviderInfo {
@@ -38,6 +40,7 @@ const CATALOGS: Record<string, Catalog> = {
   google: GOOGLE_MODELS as unknown as Catalog,
   mistral: MISTRAL_MODELS as unknown as Catalog,
   openrouter: OPENROUTER_MODELS as unknown as Catalog,
+  deepseek: DEEPSEEK_MODELS as unknown as Catalog,
 };
 
 /** Catalog models of a provider (cost in USD per million tokens), cheapest first. */

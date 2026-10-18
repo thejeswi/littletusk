@@ -11,7 +11,7 @@ export type Mode = "show" | "look-after"; // "Show me how" | "Look after me"
 export interface Settings {
   language: Language;
   mode: Mode;
-  provider: string; // pi-ai provider id, e.g. "anthropic", "openai", "google", "openrouter"
+  provider: string; // pi-ai provider id, e.g. "anthropic", "openai", "google", "openrouter", "deepseek"
   apiKey: string; // never sent anywhere except the provider; never shown to the model
   model: string; // everyday model id from pi-ai's catalog
   strongModel: string; // used when the everyday model is stuck

@@ -102,7 +102,7 @@ About the setup link: the settings travel in the part of the link after the `#`.
 
 ## Model providers
 
-Anthropic is the default: Claude Haiku 5.5 for everyday turns, and Claude Sonnet 5.5 when the cheap model is stuck. OpenAI, Google, Mistral and OpenRouter work too, through [pi-ai](https://www.npmjs.com/package/@earendil-works/pi-ai).
+Anthropic is the default: Claude Haiku 5.5 for everyday turns, and Claude Sonnet 5.5 when the cheap model is stuck. OpenAI, Google, Mistral, OpenRouter and DeepSeek (DeepSeek V4.1 Flash everyday, V4 Pro when stuck) work too, through [pi-ai](https://www.npmjs.com/package/@earendil-works/pi-ai).
 
 ## How it works
 

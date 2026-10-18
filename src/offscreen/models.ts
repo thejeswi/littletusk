@@ -6,6 +6,7 @@ import { googleProvider } from "@earendil-works/pi-ai/providers/google";
 import { mistralProvider } from "@earendil-works/pi-ai/providers/mistral";
 import { openaiProvider } from "@earendil-works/pi-ai/providers/openai";
 import { openrouterProvider } from "@earendil-works/pi-ai/providers/openrouter";
+import { deepseekProvider } from "@earendil-works/pi-ai/providers/deepseek";
 
 export interface TuskModels {
   models: MutableModels;
@@ -16,7 +17,7 @@ export interface TuskModels {
 export function createTuskModels(): TuskModels {
   const credentials = new InMemoryCredentialStore();
   const models = createModels({ credentials });
-  for (const p of [anthropicProvider(), openaiProvider(), googleProvider(), mistralProvider(), openrouterProvider()]) models.setProvider(p);
+  for (const p of [anthropicProvider(), openaiProvider(), googleProvider(), mistralProvider(), openrouterProvider(), deepseekProvider()]) models.setProvider(p);
   return {
     models,
     async setKey(provider, key) {
