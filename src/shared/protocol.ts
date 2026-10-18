@@ -128,6 +128,7 @@ export type ToAgent =
   | { to: "agent"; type: "settings-changed" }
   | { to: "agent"; type: "mic-start"; tabId?: number }
   | { to: "agent"; type: "mic-stop" }
+  | { to: "agent"; type: "mic-granted" } // the person allowed the microphone in the small permission window
   | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string } // person accepted help in look-after mode
   | { to: "agent"; type: "log-action"; text: string; tabId?: number }; // an action done locally (no model call), shown in the chat log
 
@@ -140,6 +141,7 @@ export type FromAgent =
   | { to: "sw"; type: "broadcast-view"; view: ChatView }
   | { to: "sw"; type: "speak"; text: string; lang: Language }
   | { to: "sw"; type: "mic-level"; level: number; listening: boolean } // for the listening wave
+  | { to: "sw"; type: "open-mic-permission" } // offscreen pages cannot ask for the mic: open a small window that can
   | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string }
   | { to: "sw"; type: "get-settings" } // full settings including the key; only the offscreen document may ask
   | { to: "sw"; type: "e2e-get"; key: string } // test builds only

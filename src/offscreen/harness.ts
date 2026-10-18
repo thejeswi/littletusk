@@ -297,6 +297,8 @@ export class TuskAgent {
         return void (await this.micStart(msg.tabId));
       case "mic-stop":
         return void (await this.micStop());
+      case "mic-granted":
+        return void (await this.micStart(this.taskTab || undefined));
       case "overlay-help": {
         // The person accepted help with a popup that has no obvious close button.
         if (msg.tabId) await this.update((s) => void (s.taskTabId = msg.tabId!));
@@ -412,7 +414,11 @@ export class TuskAgent {
         if (state === "listening") void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true });
         else if (state === "idle" || state === "error") {
           void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
-          if (state === "error") void this.notice(t(this.settings.language, "micError"));
+          if (state === "error" && detail === "MIC_PERMISSION") {
+            // An offscreen document cannot show the permission prompt; a small extension window can.
+            void this.notice(t(this.settings.language, "micAllow"));
+            void sendSw({ to: "sw", type: "open-mic-permission" });
+          } else if (state === "error") void this.notice(t(this.settings.language, "micError"));
           else if (detail && !this.micSubmitted) {
             this.micSubmitted = true;
             void this.userInput(detail, this.taskTab || undefined, "voice");

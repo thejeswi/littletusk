@@ -67,7 +67,9 @@ function main() {
   function startWatching() {
     if (stopWatch || !ctrl) return;
     stopWatch = tools.watchOverlays((o) => {
-      const el = tools.element(o.id);
+      // Point at what closes the popup (the small ✕, "Nur notwendige"), not at the popup layer,
+      // which often covers the whole screen and leaves Tusk nowhere to stand.
+      const el = (o.closeId && tools.element(o.closeId)) || tools.element(o.id);
       if (!el || !ctrl || !settings) return;
       offered.set(o.id, o);
       ctrl.offerOverlayHelp(o.id, el, t(settings.language, OFFER_KEY[o.kind] ?? "offerGeneric"));

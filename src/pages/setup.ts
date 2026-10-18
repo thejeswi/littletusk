@@ -82,7 +82,7 @@ function maskKey(k: string): string {
   return k.length <= 8 ? "…" : `${k.slice(0, 3)}…${k.slice(-4)}`;
 }
 
-type View = "confirm" | "mic" | "form" | "declined";
+type View = "confirm" | "mic" | "mic-only" | "form" | "declined";
 let view: View = "form";
 let pending: SetupConfig | null = null;
 
@@ -94,6 +94,7 @@ function render(): void {
   app.dataset.view = view;
   if (view === "confirm") renderConfirm();
   else if (view === "mic") renderMic(true);
+  else if (view === "mic-only") renderMic(false);
   else if (view === "declined") app.innerHTML = `<section><p>${esc(t().declined)}</p></section>`;
   else void renderForm();
 }
@@ -149,6 +150,9 @@ function wireMic(): void {
       msg.className = "ok";
       msg.textContent = t().micOk;
       app.dataset.mic = "granted";
+      // Tell Tusk, which starts listening; the small permission window closes itself.
+      void chrome.runtime.sendMessage({ to: "agent", type: "mic-granted" }).catch(() => undefined);
+      if (view === "mic-only") setTimeout(() => window.close(), 1200);
     } catch {
       msg.className = "err";
       msg.textContent = t().micFail;
@@ -257,7 +261,11 @@ async function renderForm(): Promise<void> {
 function start(): void {
   $<HTMLImageElement>("tusk").src = chrome.runtime.getURL("assets/tusk.svg");
   $("uiLang").addEventListener("change", (e) => { ui = (e.target as HTMLSelectElement).value as UiLang; render(); });
-  if (location.hash.startsWith("#lt=")) {
+  if (location.hash === "#mic") {
+    // Opened by Tusk in a small window because the microphone was not allowed yet.
+    view = "mic-only";
+    void loadSettings().then((s) => { if (s.language === "de") ui = "de"; render(); });
+  } else if (location.hash.startsWith("#lt=")) {
     const cfg = decodeSetupConfig(location.hash);
     history.replaceState(null, "", location.pathname);
     if (cfg) {

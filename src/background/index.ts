@@ -203,6 +203,10 @@ async function handleSw(msg: SwMessage, sender: chrome.runtime.MessageSender): P
       return void (await toAllTabs({ to: "content", type: "view", view: msg.view as ChatView }));
     case "speak":
       return void (await speak(msg.text, msg.lang));
+    case "open-mic-permission":
+      return void (await chrome.windows.create({
+        url: chrome.runtime.getURL("pages/setup.html#mic"), type: "popup", width: 520, height: 460, focused: true,
+      }));
     case "mic-level":
       return void (await toAllTabs({ to: "content", type: "mic", level: msg.level, listening: msg.listening }));
     case "e2e-get":
@@ -238,3 +242,8 @@ void ensureOffscreen().catch((e) => console.warn("[littletusk] offscreen", e));
 chrome.runtime.onStartup.addListener(() => void ensureOffscreen());
 chrome.runtime.onInstalled.addListener(() => void ensureOffscreen());
 console.log("[littletusk] service worker started");
+
+// The toolbar icon always brings Tusk back: hiding must never be a dead end for the person.
+chrome.action.onClicked.addListener(() => {
+  void saveSettings({ tuckedUntil: 0, tuckedSites: {} });
+});

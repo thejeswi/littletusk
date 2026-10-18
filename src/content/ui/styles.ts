@@ -13,7 +13,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 [hidden]{display:none!important}
 
 /* Tusk */
-button.tusk{position:fixed;width:72px;height:72px;padding:0;border:0;background:none;cursor:grab;touch-action:none;
+button.tusk{position:fixed;z-index:1;width:72px;height:72px;padding:0;border:0;background:none;cursor:grab;touch-action:none;
   transition:left .6s ease-in-out,top .6s ease-in-out;-webkit-tap-highlight-color:transparent;user-select:none}
 button.tusk.dragging{transition:none;cursor:grabbing}
 button.tusk .flip{width:100%;height:100%;transition:transform .2s}
@@ -26,7 +26,7 @@ button.tusk.pointing .pose-point{display:block}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045,1.03)}}
 
 /* Bubbles */
-.bubble,.listen{position:fixed;background:#fff;border:2px solid #99bbbb;border-radius:18px;padding:12px 16px;
+.bubble,.listen{position:fixed;z-index:2;background:#fff;border:2px solid #99bbbb;border-radius:18px;padding:12px 16px;
   max-width:min(320px,calc(100vw - 24px));max-height:45vh;overflow:auto;font-size:17px;line-height:1.45;
   box-shadow:0 4px 14px rgba(0,0,0,.18);transition:left .6s ease-in-out,top .6s ease-in-out}
 .bubble .txt{white-space:pre-wrap;overflow-wrap:anywhere}
@@ -44,7 +44,7 @@ button.tusk.pointing .pose-point{display:block}
 .btn.chosen{opacity:1;outline:3px solid #1f2933}
 
 /* Menu */
-.menu{position:fixed;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
+.menu{position:fixed;z-index:2;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
 .menu button{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0}
 .menu .lbl{background:#fff;border:2px solid #99bbbb;border-radius:20px;padding:8px 16px;font-size:18px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .menu .circ{width:56px;height:56px;border-radius:50%;background:#fff;border:2px solid #99bbbb;display:flex;align-items:center;
@@ -53,7 +53,7 @@ button.tusk.pointing .pose-point{display:block}
 .menu.left-side{align-items:flex-start}
 
 /* Panels */
-.panel{position:fixed;background:#fff;border:2px solid #99bbbb;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28);
+.panel{position:fixed;z-index:2;background:#fff;border:2px solid #99bbbb;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28);
   display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 16px;background:#eef3f6;border-bottom:1px solid #d3dde3}
 .head h2{margin:0;font-size:20px;font-weight:700}

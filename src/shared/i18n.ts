@@ -56,6 +56,7 @@ const en = {
   modelError: "I could not think just now. Please try again in a moment, or ask your family to check my setup.",
   micSoon: "Speaking is coming soon.",
   micError: "I could not use the microphone. Ask your family to allow it in my setup.",
+  micAllow: "I need your permission to hear you. A small window has opened: please click \"Let Tusk hear you\" there.",
 } as const;
 
 export type I18nKey = keyof typeof en;
@@ -116,6 +117,7 @@ const de: Table = {
   modelError: "Ich konnte gerade nicht nachdenken. Bitte versuchen Sie es gleich noch einmal oder bitten Sie Ihre Familie, meine Einstellungen zu prüfen.",
   micSoon: "Sprechen kommt bald.",
   micError: "Ich konnte das Mikrofon nicht benutzen. Bitten Sie Ihre Familie, es in meinen Einstellungen zu erlauben.",
+  micAllow: "Ich brauche Ihre Erlaubnis, um Sie zu hören. Ein kleines Fenster ist aufgegangen: Bitte klicken Sie dort auf \"Tusk soll mich hören\".",
 };
 
 const es: Table = {
@@ -173,6 +175,7 @@ const es: Table = {
   modelError: "No pude pensar ahora mismo. Inténtelo de nuevo en un momento o pida a su familia que revise mi configuración.",
   micSoon: "Hablar llegará pronto.",
   micError: "No pude usar el micrófono. Pida a su familia que lo permita en mi configuración.",
+  micAllow: "Necesito su permiso para oírle. Se ha abierto una ventana pequeña: haga clic en el botón de esa ventana.",
 };
 
 const enIN: Table = {
@@ -189,6 +192,7 @@ const enIN: Table = {
   shallIDoIt: "Shall I do it for you?",
   budgetReached: "I have reached this month's limit, so I will rest till next month. Your family can change the limit.",
   noKey: "Please ask your family to set me up.",
+  micAllow: "I need your permission to hear you. A small window has opened, kindly click \"Let Tusk hear you\" there.",
   spend: "Used this month: {spent} out of {limit} {currency}",
   yourTurnType: "Kindly type here yourself. I will not see it.",
   offerCookie: "This is a cookie notice. Shall I close it for you?",

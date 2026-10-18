@@ -442,7 +442,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     let chosen: [number, number] | null = null;
     const tr = { l: p.x, t: p.y, r: p.x + S, b: p.y + S };
     // First try to stay clear of the popup or form around the target too; if nothing fits, only keep clear of the target.
-    for (const list of [avoid.concat(soft), avoid]) {
+    // Last resort: keep clear of Tusk at least, so Tusk never sits on its own bubble's buttons.
+    for (const list of [avoid.concat(soft), avoid, []]) {
       for (const c of cand) {
         const [x, y] = fix(c);
         const r = { l: x, t: y, r: x + w, b: y + hh };
@@ -618,7 +619,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
 
   // ---------- controller ----------
   function popNewTusk(v: ChatView) {
-    const lastTusk = [...v.items].reverse().find((i): i is Extract<ChatItem, { kind: "tusk" }> => i.kind === "tusk");
+    // Tusk's replies and notices (no key, budget, microphone) pop up as a bubble when the chat is closed.
+    const lastTusk = [...v.items].reverse().find((i): i is Extract<ChatItem, { kind: "tusk" | "notice" }> => i.kind === "tusk" || i.kind === "notice");
     const key = lastTusk ? `${lastTusk.id}:${lastTusk.text}` : "";
     const changed = key !== lastTuskKey;
     lastTuskKey = key;
