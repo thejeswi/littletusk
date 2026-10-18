@@ -174,6 +174,15 @@ test("07 look after me, cookie banner", async ({ context, demoUrl, tusk }) => {
   await shot(page, "07-look-after-cookies.png");
 });
 
+test("14 look after me, a scam email", async ({ context, demoUrl, tusk }) => {
+  await tusk.configure({ mode: "look-after", monthlyLimit: 10, currency: "EUR" });
+  const page = await context.newPage();
+  await page.goto(`${demoUrl}/webmail.html`);
+  await expect(page.locator(".bubble .btn.yes")).toBeVisible({ timeout: 10_000 });
+  await settle(page, 1500);
+  await shot(page, "14-scam-warning.png");
+});
+
 test("08 a secret field: the person types it", async ({ context, demoUrl, tusk }) => {
   await tusk.script([
     { tools: [{ name: "read_page" }] },

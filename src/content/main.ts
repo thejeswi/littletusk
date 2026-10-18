@@ -23,6 +23,7 @@ function main() {
   let settings: PublicSettings | null = null;
   let ctrl: OverlayController | null = null;
   let stopWatch: (() => void) | null = null;
+  let stopWatchWarnings: (() => void) | null = null;
   let tuckTimer: ReturnType<typeof setTimeout> | undefined;
   const offered = new Map<string, OverlayInfo>();
 
@@ -44,6 +45,7 @@ function main() {
     newsletter: "offerNewsletter",
     ad: "offerAd",
     modal: "offerPopup",
+    scam: "offerScam",
     other: "offerGeneric",
   };
 
@@ -67,6 +69,11 @@ function main() {
     const o = offered.get(overlayId);
     if (!o || !settings) return;
     const lang = settings.language;
+    if (o.kind === "scam") {
+      // No click: the person asked Tusk to explain, so the agent reads the page and shows what is wrong.
+      void send({ to: "agent", type: "user-input", text: "Is this message a scam? Please check it and tell me what to do.", via: "chat" });
+      return;
+    }
     if (o.closeId) {
       const d = tools.describe(o.closeId);
       if (d && !d.irreversible && !looksIrreversible(d.name)) {
@@ -86,6 +93,7 @@ function main() {
 
   function startWatching() {
     if (stopWatch || !ctrl) return;
+    startWatchingWarnings();
     stopWatch = tools.watchOverlays((o) => {
       // Point at what closes the popup (the small ✕, "Nur notwendige"), not at the popup layer,
       // which often covers the whole screen and leaves Tusk nowhere to stand.
@@ -95,7 +103,19 @@ function main() {
       ctrl.offerOverlayHelp(o.id, el, t(settings.language, OFFER_KEY[o.kind] ?? "offerGeneric"));
     });
   }
+  /** Pressuring text on the page (a scam email): offer to explain, with no model call until the person says yes. */
+  function startWatchingWarnings() {
+    if (stopWatchWarnings || !ctrl) return;
+    stopWatchWarnings = tools.watchWarnings((w) => {
+      const el = tools.element(w.id);
+      if (!el || !ctrl || !settings) return;
+      offered.set(w.id, { id: w.id, kind: "scam", summary: w.summary });
+      ctrl.offerOverlayHelp(w.id, el, t(settings.language, "offerScam"));
+    });
+  }
   function stopWatching() {
+    stopWatchWarnings?.();
+    stopWatchWarnings = null;
     stopWatch?.();
     stopWatch = null;
   }

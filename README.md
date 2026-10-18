@@ -54,8 +54,10 @@ These rules are enforced in code, not only in the instructions to the model.
 - **Tusk asks before anything that cannot be undone.** Buying, paying, sending, deleting and confirming need a big "Yes" from you first, whatever the language of the page.
 - **Tusk never sees your passwords.** It cannot type into password, one-time code, PIN or IBAN fields, and it never reads what is in them. It marks the field and asks you to type.
 - **No downloads, no strange addresses.** Tusk will not download files or open `file:`, `chrome:` or `javascript:` addresses.
-- **Scam warnings.** Remote-access tools, gift cards and "urgent" payments are explained as the scams they probably are.
+- **Scam warnings.** Remote-access tools, gift cards and "urgent" payments are explained as the scams they probably are. Tusk also checks the page itself, on your computer: when a message pressures you the way scams do (an account that will be closed today, gift cards, "tell nobody"), Tusk marks that text, and in "Look after me" it speaks up without being asked. It then points at the safe way out, such as "Report spam", and never at what the scammer wants.
 - **Page text is information, not orders.** A page that says "ignore your instructions" gets ignored.
+
+![Tusk spots a scam email on its own](docs/screenshots/14-scam-warning.png)
 
 ![Tusk asks before buying](docs/screenshots/06-confirm.png)
 

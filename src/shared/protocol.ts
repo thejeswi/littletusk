@@ -70,9 +70,16 @@ export interface SnapElement {
 
 export interface OverlayInfo {
   id: string; // id of the overlay container element
-  kind: "cookie-banner" | "newsletter" | "modal" | "ad" | "other";
+  kind: "cookie-banner" | "newsletter" | "modal" | "ad" | "scam" | "other";
   closeId?: string; // id of the element that most likely closes/dismisses it
   summary: string; // short text, e.g. "Newsletter abonnieren! ..."
+}
+
+/** Text on the page that pressures a person the way scams do (found locally, no model involved). */
+export interface PageWarning {
+  id: string; // id of the element holding the pressuring text
+  kind: "scam";
+  summary: string;
 }
 
 export interface PageSnapshot {
@@ -82,6 +89,7 @@ export interface PageSnapshot {
   elements: SnapElement[];
   text: string; // visible main text, bounded (~3000 chars)
   overlays: OverlayInfo[];
+  warnings: PageWarning[];
 }
 
 // ---------- Page commands (agent -> content script in the task tab) ----------

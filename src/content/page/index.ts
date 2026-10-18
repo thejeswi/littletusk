@@ -1,7 +1,8 @@
 // Page tools: read the page as a bounded snapshot and act on it, with the safety rules enforced here.
 
-import type { ElementKind, OverlayInfo, PageCommand, PageResult, PageSnapshot, SnapElement } from "../../shared/protocol";
+import type { ElementKind, OverlayInfo, PageCommand, PageResult, PageSnapshot, PageWarning, SnapElement } from "../../shared/protocol";
 import { detectOverlays as detect } from "./overlays";
+import { detectScams } from "./scam";
 import { blockedTarget, isSecretField, looksIrreversible, looksLikeClose, looksLikeDismiss, paymentHint } from "./safety";
 
 export { looksIrreversible, isSecretField };
@@ -16,6 +17,8 @@ export interface PageTools {
   describe(id: string): SnapElement | null;
   detectOverlays(): OverlayInfo[];
   watchOverlays(cb: (o: OverlayInfo) => void): () => void;
+  detectWarnings(): PageWarning[];
+  watchWarnings(cb: (w: PageWarning) => void): () => void;
 }
 
 const MAX_ELEMENTS = 150;
@@ -214,6 +217,8 @@ export function createPageTools(doc: Document, win: Window): PageTools {
     return s;
   };
 
+  const detectWarnings = (): PageWarning[] => detectScams(doc, idFor, isVisible);
+
   const detectHelpers = () => ({ idFor, nameOf, isVisible, hasLayout: hasLayout() });
   const detectOverlays = (): OverlayInfo[] => detect(doc, win, detectHelpers());
 
@@ -272,6 +277,7 @@ export function createPageTools(doc: Document, win: Window): PageTools {
       elements: chosen.map((c) => describeEl(c.el, roots)),
       text: pageText(),
       overlays,
+      warnings: detectWarnings(),
     };
   };
 
@@ -453,5 +459,30 @@ export function createPageTools(doc: Document, win: Window): PageTools {
     };
   };
 
-  return { snapshot, run, element, describe, detectOverlays, watchOverlays };
+  const watchWarnings = (cb: (w: PageWarning) => void): (() => void) => {
+    const seen = new WeakSet<Element>();
+    let timer: number | undefined;
+    const check = () => {
+      for (const w of detectWarnings()) {
+        const el = element(w.id);
+        if (!el || seen.has(el)) continue;
+        seen.add(el);
+        cb(w);
+      }
+    };
+    const schedule = () => {
+      if (timer !== undefined) win.clearTimeout(timer);
+      timer = win.setTimeout(check, 600);
+    };
+    const MO = (win as unknown as { MutationObserver: typeof MutationObserver }).MutationObserver;
+    const mo = new MO(schedule);
+    mo.observe(doc.documentElement, { childList: true, subtree: true, characterData: true });
+    schedule();
+    return () => {
+      mo.disconnect();
+      if (timer !== undefined) win.clearTimeout(timer);
+    };
+  };
+
+  return { snapshot, run, element, describe, detectOverlays, watchOverlays, detectWarnings, watchWarnings };
 }

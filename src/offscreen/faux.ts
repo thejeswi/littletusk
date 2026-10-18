@@ -20,7 +20,7 @@ function findId(messages: readonly any[], pattern: string): string {
     if (m.role !== "toolResult" || m.toolName !== "read_page") continue;
     const body = (m.content ?? []).map((c: any) => c.text ?? "").join("");
     for (const line of body.split("\n")) {
-      const hit = /^\[(e\d+)\]/.exec(line);
+      const hit = /^(?:- )?\[(e\d+)\]/.exec(line); // an element line, or a WARNING line ("- [e12] ...")
       if (hit && re.test(line)) return hit[1];
     }
   }

@@ -97,6 +97,7 @@ describe("read_page rendering", () => {
     url: "https://shop.example/",
     title: "Shop",
     lang: "de",
+    warnings: [],
     overlays: [{ id: "e1", kind: "newsletter", closeId: "e3", summary: "Newsletter abonnieren!" }],
     elements: [
       { id: "e3", kind: "close", name: "✕", inOverlay: true, inViewport: true },

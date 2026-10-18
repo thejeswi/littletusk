@@ -14,6 +14,10 @@ export function renderSnapshot(s: PageSnapshot): string {
   } else {
     out.push("popups open: none");
   }
+  if (s.warnings?.length) {
+    out.push("WARNING, text on this page that pressures like a scam (found by Tusk's own check):");
+    for (const w of s.warnings) out.push(`- [${w.id}] ${JSON.stringify(w.summary)}`);
+  }
   out.push("elements:");
   if (!s.elements.length) out.push("(none found)");
   for (const e of s.elements) {
