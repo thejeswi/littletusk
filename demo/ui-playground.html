@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="littletusk-playground" content="1">
+<title>Little Tusk UI playground</title>
+<style>
+  body{font-family:Georgia,serif;margin:0;padding:24px;line-height:1.5;color:#222}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+  button,input{font-size:16px;padding:8px 12px}
+  #far{margin-top:900px}
+  #banner{position:fixed;left:0;right:0;bottom:0;background:#333;color:#fff;padding:12px;z-index:5}
+</style>
+</head>
+<body>
+<h1>UI playground</h1>
+<p>Fake data for the overlay. Use the buttons below.</p>
+<div class="row">
+  <button id="b1" data-tusk-demo="point" data-target="#go" data-say="Click this button.">Point at Go</button>
+  <button data-tusk-demo="spotlight" data-target="#go" data-say="This is the one that matters.">Spotlight Go</button>
+  <button data-tusk-demo="ask" data-target="#name" data-say="Please type your name here yourself.">Ask to type</button>
+  <button data-tusk-demo="offer" data-target="#banner" data-say="That looks like an ad. Shall I close it?">Offer help</button>
+  <button data-tusk-demo="say" data-say="Hello from Tusk.">Say</button>
+  <button data-tusk-demo="busy">Busy view</button>
+  <button data-tusk-demo="clear">Clear</button>
+</div>
+<div class="row"><button id="go">Go</button> <input id="name" placeholder="Your name"></div>
+<button id="far" data-tusk-demo="point" data-target="#far" data-say="Far below.">Far away target</button>
+<div id="banner">We use cookies. <button>Accept</button></div>
+</body>
+</html>
