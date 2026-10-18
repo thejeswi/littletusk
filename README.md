@@ -81,7 +81,7 @@ Tusk uses a cheap model for everyday turns and reads the page as text, not scree
 
 This is the "grandchild flow": you set Little Tusk up once, on their computer.
 
-1. **Install.** For now: build it and load it unpacked (see [Development](#development)). A Chrome Web Store listing comes later.
+1. **Install.** Download `littletusk-vX.Y.Z.zip` from the [Releases](https://github.com/thejeswi/littletusk/releases) page and unzip it. In Chrome (or Chromium, Edge, Brave) open `chrome://extensions`, switch on Developer mode, click "Load unpacked" and choose the unzipped folder. Keep that folder: Chrome reads the extension from it. Developers can build it themselves instead (see [Development](#development)). A Chrome Web Store listing comes later.
 2. **Add the key.** Either way works:
    - **Family settings page.** Open it from Tusk's Settings, "Family settings". Choose a provider, paste the key, set the monthly limit, language and mode, and click Save.
 
@@ -94,6 +94,18 @@ This is the "grandchild flow": you set Little Tusk up once, on their computer.
 About the setup link: the settings travel in the part of the link after the `#`. Browsers never send that part to a server, so nobody but the two computers sees the key. Still, please use a separate key that has a spending limit set at the provider, and delete the email afterwards.
 
 The two static pages in `site/` (the landing page and the setup-link page) are published to GitHub Pages by `.github/workflows/pages.yml`. One-time setting in the repository: Settings, Pages, Source: "GitHub Actions". The pages need no build and load nothing from other sites.
+
+### Making a release
+
+The built extension is not stored in the repository. A release is built from the source by a workflow:
+
+```bash
+# set "version" in manifest.json and package.json, commit, then:
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow (`.github/workflows/release.yml`) runs the type check and tests, builds from a clean checkout, checks that the build contains no personal paths or names, and attaches the zip to a GitHub Release. The tag has to match the version in `manifest.json`. Running the workflow by hand builds the same zip as a download without making a release.
 
 ## Privacy
 

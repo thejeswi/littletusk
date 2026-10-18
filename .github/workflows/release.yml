@@ -1,0 +1,54 @@
+# Builds the extension from a clean checkout and attaches it to a GitHub Release as a zip.
+#   git tag v0.1.0 && git push origin v0.1.0
+# The tag must match "version" in manifest.json. People download the zip, unzip it, and load the
+# folder in chrome://extensions (Developer mode > Load unpacked).
+# "Run workflow" by hand builds the same zip and keeps it as a workflow artifact, without a release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: No personal paths or names in the build
+        run: bash scripts/check-clean.sh
+      - name: Check the tag matches the manifest version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          manifest="$(node -p "require('./dist/manifest.json').version")"
+          if [ "v$manifest" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match manifest version $manifest" >&2
+            exit 1
+          fi
+      - name: Zip the extension
+        run: |
+          name="littletusk-${GITHUB_REF_NAME//\//-}.zip"
+          (cd dist && zip -qr "../$name" .)
+          echo "ZIP=$name" >> "$GITHUB_ENV"
+          ls -l "$name"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        with:
+          name: littletusk-build
+          path: ${{ env.ZIP }}
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" "$ZIP" --title "Little Tusk ${GITHUB_REF_NAME}" --generate-notes
