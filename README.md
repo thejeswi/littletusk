@@ -93,6 +93,8 @@ This is the "grandchild flow": you set Little Tusk up once, on their computer.
 
 About the setup link: the settings travel in the part of the link after the `#`. Browsers never send that part to a server, so nobody but the two computers sees the key. Still, please use a separate key that has a spending limit set at the provider, and delete the email afterwards.
 
+The two static pages in `site/` (the landing page and the setup-link page) are published to GitHub Pages by `.github/workflows/pages.yml`. One-time setting in the repository: Settings, Pages, Source: "GitHub Actions". The pages need no build and load nothing from other sites.
+
 ## Privacy
 
 - Everything stays in the browser. The conversation lives in pi-durable on SQLite compiled to WebAssembly, in the extension's private storage.
