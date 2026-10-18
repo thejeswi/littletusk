@@ -6,6 +6,8 @@ A friendly little elephant that helps seniors, and anyone who finds the web conf
 
 Little Tusk is a Chrome extension. A small baby elephant called Tusk floats in the corner of every web page. When you get stuck on something silly, Tusk walks over to the right thing, points at it with its trunk, explains in plain words and, if you want, does it for you.
 
+![Tusk waiting in the corner of a shop page](docs/screenshots/01-tusk-on-page.png)
+
 ## Why
 
 Most of the trouble people have online is small and silly. A popup that will not close because the little cross is nearly invisible. A cookie banner that covers the page. A button that is called something other than what you expect. You wanted to "pay for the electricity", and the page wants a "meter reading".
