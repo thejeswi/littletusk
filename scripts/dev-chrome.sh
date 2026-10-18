@@ -8,8 +8,8 @@
 # - Keeps its own profile in .chrome-profile/ (git-ignored), so your settings, API key and
 #   the downloaded speech model survive restarts. Delete that folder to start fresh.
 # - Opens a debugging port (default 9222) so tools can read logs and take screenshots.
-# - Serves the repo on http://127.0.0.1:8123 for the demo pages (/demo/shop.html, ...)
-#   and the setup-link page (/site/setup.html).
+# - Serves the repo on http://127.0.0.1:8123 and opens the demo index (/demo/index.html), which links
+#   every demo page with what to say; the setup-link page is at /site/setup.html.
 # Ctrl+C stops Chromium and the demo server.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -38,7 +38,7 @@ python3 -m http.server "$PORT_DEMO" --bind 127.0.0.1 >/dev/null 2>&1 &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null || true' EXIT
 
-echo "Little Tusk: debugging port $PORT_DEBUG, demo pages on http://127.0.0.1:$PORT_DEMO/demo/"
+echo "Little Tusk: debugging port $PORT_DEBUG, demo index on http://127.0.0.1:$PORT_DEMO/demo/index.html"
 "$CHROME" \
   --user-data-dir="$PROFILE" \
   --remote-debugging-port="$PORT_DEBUG" \
@@ -46,4 +46,4 @@ echo "Little Tusk: debugging port $PORT_DEBUG, demo pages on http://127.0.0.1:$P
   --load-extension="$PWD/dist" \
   --no-first-run --no-default-browser-check \
   "${EXTRA[@]}" \
-  "http://127.0.0.1:$PORT_DEMO/demo/shop.html" >/dev/null 2>&1 || true
+  "http://127.0.0.1:$PORT_DEMO/demo/index.html" >/dev/null 2>&1 || true

@@ -141,6 +141,8 @@ npm run screenshots    # regenerates docs/screenshots/ on the local demo pages
 scripts/check-clean.sh # no personal paths or names in tracked files or the build
 ```
 
+To try Tusk by hand in a visible browser, run `scripts/dev-chrome.sh`. It builds the extension, starts a separate Chromium with it loaded and opens `demo/index.html`, a page that links every demo with what to say and which mode to use. It keeps its own profile in `.chrome-profile/`, so your key survives restarts.
+
 The demo pages in `demo/` are in German on purpose, with made-up names. The end-to-end tests and the screenshots use a build with a scripted fake model (`npm run build:e2e`), so they need no API key.
 
 ## Scenario tests
