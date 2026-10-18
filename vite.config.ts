@@ -20,6 +20,7 @@ export default defineConfig({
         background: resolve(import.meta.dirname, "src/background/index.ts"),
         offscreen: resolve(import.meta.dirname, "src/pages/offscreen.html"),
         setup: resolve(import.meta.dirname, "src/pages/setup.html"),
+        "storage-selftest": resolve(import.meta.dirname, "src/pages/storage-selftest.html"),
       },
       output: {
         entryFileNames: (chunk) => (chunk.name === "background" ? "background.js" : "chunks/[name]-[hash].js"),
