@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tageblatt Musterstadt – Nachrichten</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+.top { background:#1f2a37; color:#cbd5e1; font-size:12px; padding:6px 24px; display:flex; flex-wrap:wrap; gap:4px 18px; }
+.top a { color:#cbd5e1; text-decoration:none; }
+.masthead { background:#fff; border-bottom:3px solid #b91c1c; padding:12px 24px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 24px; }
+.masthead .logo { font-family:Georgia,serif; font-size:30px; font-weight:700; color:#b91c1c; }
+.masthead nav { display:flex; flex-wrap:wrap; gap:4px 16px; flex:1; }
+.masthead nav a { color:var(--ink); text-decoration:none; font-weight:600; font-size:15px; }
+.who { display:flex; align-items:center; gap:4px; font-size:11px; color:#6b7280; text-decoration:none; }
+.who svg { width:18px; height:18px; fill:#6b7280; }
+.ticker { background:#fde68a; padding:6px 24px; font-size:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.wrap { max-width:1100px; margin:20px auto; padding:0 16px; display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:20px; }
+@media (max-width:760px){ .wrap{grid-template-columns:1fr} }
+.hero { background:linear-gradient(135deg,#dbeafe,#fecaca); border-radius:12px; min-height:200px; padding:24px; display:flex; align-items:flex-end; font-family:Georgia,serif; font-size:28px; font-weight:700; }
+.story { background:#fff; border-radius:10px; padding:14px 16px; margin-top:14px; }
+.story h3 { margin:0 0 4px; font-size:18px; }
+.story p { margin:0; color:var(--muted); font-size:14px; }
+.ad { border:1px dashed #9ca3af; border-radius:10px; padding:18px; text-align:center; margin-bottom:14px; background:repeating-linear-gradient(45deg,#fff,#fff 10px,#f3f4f6 10px,#f3f4f6 20px); }
+.ad b { display:block; font-size:20px; color:#b45309; }
+.ad button { margin-top:8px; background:#16a34a; color:#fff; border:0; border-radius:6px; padding:8px 14px; font-size:14px; cursor:pointer; }
+.ad.big { background:#fef3c7; border-style:solid; border-color:#f59e0b; }
+.tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.tags a { background:#e5e7eb; color:#374151; border-radius:999px; padding:3px 10px; font-size:12px; text-decoration:none; }
+#msg { padding:8px 24px; color:var(--brand); font-weight:600; min-height:1em; }
+</style></head>
+<body>
+<div class="top"><a href="#">E-Paper</a><a href="#">Anzeigen</a><a href="#">Abo-Angebote</a><a href="#">Leserreisen</a><a href="#">Hilfe</a><a href="#">Wetter heute: 17 Grad</a></div>
+<div class="masthead">
+  <span class="logo">Tageblatt</span>
+  <nav><a href="#">Politik</a><a href="#">Wirtschaft</a><a href="#">Sport</a><a href="#">Kultur</a><a href="#">Region</a><a href="#">Wetter</a><a href="#">Auto</a><a href="#">Reise</a><a href="#">Rätsel</a></nav>
+  <a class="who" href="#" onclick="document.getElementById('msg').textContent='Geöffnet: Mein Konto (Demo).';return false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z"/></svg>Mein Konto</a>
+</div>
+<div class="ticker">+++ Eilmeldung: Stadtrat beschließt neuen Radweg +++ Fußball: Musterstadt gewinnt 3:1 +++ Wetter: Am Wochenende Sonne +++</div>
+<div id="msg" role="status"></div>
+<div class="wrap">
+  <main style="margin:0;padding:0;max-width:none">
+    <div class="hero">Neuer Radweg für Musterstadt: Das ändert sich ab Montag</div>
+    <div class="story"><h3>Stadtrat stimmt für Haushalt 2027</h3><p>Nach langer Debatte einigten sich die Fraktionen auf einen Kompromiss.</p></div>
+    <div class="story"><h3>Wochenmarkt zieht auf den Rathausplatz um</h3><p>Die Händler freuen sich über mehr Platz, Anwohner über weniger Verkehr.</p></div>
+    <div class="story"><h3>Fußball: Musterstadt schlägt Tabellenführer</h3><p>Ein spätes Tor entschied das Heimspiel vor 4.000 Zuschauern.</p></div>
+    <div class="ad big"><b>Mega-Gewinnspiel!</b>Gewinnen Sie eine Reise für zwei nach Musterinsel.<br><button type="button" onclick="document.getElementById('msg').textContent='Gewinnspiel (Demo).'">Jetzt teilnehmen</button></div>
+    <div class="story"><h3>Neue Ausstellung im Stadtmuseum eröffnet</h3><p>Zu sehen sind Fotografien aus hundert Jahren Stadtgeschichte.</p></div>
+    <div class="story"><h3>Tipps: So bleibt der Garten im Herbst gesund</h3><p>Unsere Gartenexpertin verrät, was jetzt noch zu tun ist.</p></div>
+    <div class="tags"><a href="#">Politik</a><a href="#">Sport</a><a href="#">Verkehr</a><a href="#">Kultur</a><a href="#">Wetter</a><a href="#">Garten</a><a href="#">Gesundheit</a></div>
+  </main>
+  <aside>
+    <div class="ad"><b>Neuwagen-Aktion</b>0 % Finanzierung nur diese Woche<br><button type="button">Angebot ansehen</button></div>
+    <div class="ad"><b>Handytarif ab 9,99 €</b>Jetzt wechseln<br><button type="button">Mehr erfahren</button></div>
+    <div class="story"><h3>Meistgelesen</h3><p>1. Radweg-Streit beigelegt<br>2. Neue Ampel am Marktplatz<br>3. Stadtfest: Das Programm</p></div>
+    <div class="ad"><b>Leserreise Nordsee</b>7 Tage ab 699 €<br><button type="button">Zur Reise</button></div>
+  </aside>
+</div>
+<span class="demo-badge">Demo</span>
+</body></html>

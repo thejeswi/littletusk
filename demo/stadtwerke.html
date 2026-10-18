@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stadtwerke Musterstadt – Kundenportal</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+.promo { background:#fff3c4; border:1px solid #f2d36b; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; }
+.promo b { color:#8a5a00; }
+.news { background:#e8f1fb; border-radius:10px; padding:10px 16px; margin-bottom:16px; font-size:14px; color:#27496d; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-top:16px; }
+a.tile { display:block; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; color:var(--ink); text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+a.tile b { display:block; font-size:17px; margin-bottom:4px; color:var(--brand); }
+a.tile span { font-size:13px; color:var(--muted); }
+.side { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,1fr); gap:20px; }
+.side aside .card { margin-bottom:14px; font-size:14px; }
+.side aside h3 { margin:0 0 6px; font-size:15px; }
+@media (max-width:760px){ .side{grid-template-columns:1fr} }
+footer { max-width:900px; margin:0 auto 60px; padding:0 20px; font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 18px; }
+footer a { color:var(--muted); }
+#status { color:var(--brand); font-weight:600; min-height:1.5em; }
+</style></head>
+<body>
+<header class="site"><b>Stadtwerke Musterstadt</b><a href="#">Privatkunden</a><a href="#">Geschäftskunden</a><a href="#">Netz</a><a href="#">Über uns</a><a href="#">Karriere</a></header>
+<main>
+  <div class="promo"><span><b>Ökostrom Plus:</b> Jetzt wechseln und 50 € Bonus sichern! Nur bis Monatsende.</span><button class="secondary" type="button" onclick="document.getElementById('status').textContent='Aktion (Demo).'">Zum Angebot</button></div>
+  <div class="news">Hinweis: Am Samstag sind wir wegen Wartungsarbeiten von 2 bis 5 Uhr nicht erreichbar.</div>
+  <div class="side">
+    <section class="card">
+      <h1>Willkommen im Kundenportal</h1>
+      <p>Hier erledigen Sie alles rund um Ihren Strom-, Gas- und Wasservertrag.</p>
+      <div class="grid">
+        <a class="tile" href="#" onclick="return go('Rechnungen')"><b>Rechnungen</b><span>Alle Rechnungen ansehen und herunterladen</span></a>
+        <a class="tile" href="#" onclick="return go('Abschlag')"><b>Abschlag ändern</b><span>Monatlichen Betrag anpassen</span></a>
+        <a class="tile" href="#" onclick="return go('Zählerstand')"><b>Zählerstand melden</b><span>Ihre Verbrauchswerte übermitteln</span></a>
+        <a class="tile" href="#" onclick="return go('Umzug')"><b>Umzug melden</b><span>Ab- und Anmeldung in einem Schritt</span></a>
+        <a class="tile" href="#" onclick="return go('Tarife')"><b>Tarife</b><span>Unsere aktuellen Angebote</span></a>
+        <a class="tile" href="#" onclick="return go('Kontakt')"><b>Kontakt</b><span>Telefon, E-Mail und Servicezeiten</span></a>
+        <a class="tile" href="#" onclick="return go('Vertrag')"><b>Vertragsdaten</b><span>Adresse und Bankverbindung</span></a>
+        <a class="tile" href="#" onclick="return go('Störung')"><b>Störung melden</b><span>Kein Strom? Hier entlang</span></a>
+      </div>
+      <p id="status" role="status"></p>
+    </section>
+    <aside>
+      <div class="card"><h3>Ladesäulen-Karte</h3>Finden Sie freie Ladepunkte in Musterstadt.</div>
+      <div class="card"><h3>Energiespar-Tipps</h3>Sieben einfache Wege, die Heizkosten zu senken.</div>
+      <div class="card"><h3>Newsletter</h3>Neuigkeiten aus der Stadt, einmal im Monat.</div>
+    </aside>
+  </div>
+</main>
+<footer><a href="#">Impressum</a><a href="#">Datenschutz</a><a href="#">AGB</a><a href="#">Barrierefreiheit</a><a href="#">Presse</a></footer>
+<span class="demo-badge">Demo</span>
+<script>
+function go(what){ document.getElementById('status').textContent = 'Geöffnet: ' + what + ' (Demo).'; return false; }
+</script>
+</body></html>

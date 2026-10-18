@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beispiel-Mail – Mega-Sale</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+.mail { max-width:640px; margin:24px auto; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; }
+.mail .head { padding:14px 20px; border-bottom:1px solid #e5e7eb; font-size:14px; color:var(--muted); }
+.mail .head b { color:var(--ink); }
+.promo { background:linear-gradient(135deg,#f97316,#ec4899); color:#fff; text-align:center; padding:60px 20px; }
+.promo h1 { font-size:56px; margin:0; line-height:1.1; }
+.promo p { font-size:24px; margin:12px 0 0; }
+.cta { display:block; margin:24px auto; width:80%; text-align:center; background:#facc15; color:#1f2a37; font-size:26px; font-weight:800; padding:20px; border-radius:12px; text-decoration:none; }
+.deals { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 20px; }
+.deal { background:#fef3c7; border-radius:10px; padding:40px 12px; text-align:center; font-size:22px; font-weight:700; }
+.big { background:#dbeafe; text-align:center; padding:90px 20px; font-size:34px; font-weight:800; color:#1d4ed8; }
+.fine { padding:60px 20px 24px; text-align:center; font-size:10px; color:#c4c7cc; }
+.fine a { color:#c4c7cc; }
+#status { text-align:center; color:var(--brand); font-weight:600; min-height:1.4em; padding-bottom:12px; }
+</style></head>
+<body>
+<header class="site"><b>Beispiel-Mail</b><a href="#">Posteingang</a><a href="#">Gesendet</a></header>
+<div class="mail">
+  <div class="head"><b>Möbelhaus Muster</b> &lt;angebote@moebelhaus-muster.example&gt;<br>Betreff: MEGA-SALE: Bis zu 70 % auf alles!</div>
+  <div class="promo"><h1>MEGA-SALE</h1><p>Bis zu 70 % auf alles. Nur heute!</p></div>
+  <a class="cta" href="#" onclick="return false">JETZT SHOPPEN</a>
+  <div class="deals"><div class="deal">Sofas ab 199 €</div><div class="deal">Tische ab 59 €</div><div class="deal">Lampen ab 9 €</div><div class="deal">Betten ab 149 €</div></div>
+  <div class="big">Gratis Lieferung ab 50 €</div>
+  <a class="cta" href="#" onclick="return false">ZU DEN ANGEBOTEN</a>
+  <div class="deals"><div class="deal">Teppiche ab 29 €</div><div class="deal">Regale ab 39 €</div></div>
+  <div class="fine">Sie erhalten diese E-Mail, weil Sie sich bei Möbelhaus Muster angemeldet haben. Möbelhaus Muster GmbH, Musterweg 1, 12345 Musterstadt.<br>
+    <a href="#" onclick="document.getElementById('status').textContent='Sie wurden abbestellt (Demo).';return false">Newsletter abbestellen</a></div>
+  <div id="status" role="status"></div>
+</div>
+<span class="demo-badge">Demo</span>
+</body></html>

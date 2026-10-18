@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beispiel-Mail – Posteingang</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+.app { display:grid; grid-template-columns:180px minmax(0,260px) minmax(0,1fr); gap:0; max-width:1100px; margin:20px auto; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; min-height:520px; }
+@media (max-width:860px){ .app{grid-template-columns:1fr} .folders,.list{border-right:0 !important} }
+.folders { border-right:1px solid #e5e7eb; padding:14px; font-size:15px; background:#fafafa; }
+.folders button.primary { width:100%; margin-bottom:12px; padding:10px; }
+.folders a { display:block; padding:6px 8px; color:var(--ink); text-decoration:none; border-radius:6px; }
+.folders a.on { background:#e0efe9; font-weight:600; }
+.list { border-right:1px solid #e5e7eb; }
+.row { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:14px; }
+.row b { display:block; }
+.row.on { background:#eef6f2; }
+.row small { color:var(--muted); }
+.mail { padding:22px 26px; }
+.mail h1 { font-size:22px; margin:0 0 6px; }
+.meta { color:var(--muted); font-size:13px; margin-bottom:14px; }
+.mail .warn { background:#fee2e2; border:1px solid #fca5a5; padding:10px 14px; border-radius:8px; font-weight:600; }
+.mail .buy { display:inline-block; margin:12px 0; background:#b91c1c; color:#fff; text-decoration:none; padding:12px 20px; border-radius:8px; font-weight:700; }
+.actions { margin-top:18px; display:flex; gap:10px; }
+#status { color:var(--brand); font-weight:600; min-height:1.4em; margin-top:10px; }
+</style></head>
+<body>
+<header class="site"><b>Beispiel-Mail</b><a href="#">Posteingang</a><a href="#">Kontakte</a><a href="#">Einstellungen</a></header>
+<div class="app">
+  <nav class="folders">
+    <button class="primary" type="button">Neue Nachricht</button>
+    <a class="on" href="#">Posteingang (3)</a><a href="#">Gesendet</a><a href="#">Entwürfe</a><a href="#">Spam</a><a href="#">Papierkorb</a>
+  </nav>
+  <section class="list">
+    <div class="row on"><b>Konto-Team</b>Ihr Konto wird gesperrt!<br><small>Heute, 08:12</small></div>
+    <div class="row"><b>Stadtbibliothek</b>Ihre Bücher sind fällig<br><small>Gestern</small></div>
+    <div class="row"><b>Enkelin Lena</b>Fotos vom Wochenende<br><small>Montag</small></div>
+  </section>
+  <article class="mail">
+    <h1>Ihr Konto wird gesperrt!</h1>
+    <div class="meta">Von: Konto-Team &lt;support@konto-sicherheit-pruefung.example&gt; · Heute, 08:12</div>
+    <p class="warn">Dringend: Ihr Beispiel-Mail-Konto wird heute um 18:00 Uhr gesperrt und alle Ihre Nachrichten werden gelöscht!</p>
+    <p>Sehr geehrter Kunde, wir konnten Ihre Zahlungsdaten nicht bestätigen. Um die Sperrung zu verhindern, kaufen Sie noch heute <b>Geschenkkarten im Wert von 500 €</b> in einem Supermarkt oder an der Tankstelle und senden Sie uns die Codes per Antwort auf diese E-Mail.</p>
+    <p>Sprechen Sie mit niemandem darüber. Nach Eingang der Codes bleibt Ihr Konto erhalten.</p>
+    <a class="buy" href="#" onclick="document.getElementById('status').textContent='Geschenkkarten-Seite geöffnet (Demo).';return false">Jetzt Geschenkkarten kaufen</a>
+    <div class="actions"><button class="secondary" type="button" onclick="document.getElementById('status').textContent='Antwortfenster geöffnet (Demo).'">Antworten</button><button class="secondary" type="button" onclick="document.getElementById('status').textContent='Als Spam gemeldet (Demo).'">Als Spam melden</button></div>
+    <p id="status" role="status"></p>
+  </article>
+</div>
+<span class="demo-badge">Demo</span>
+</body></html>
