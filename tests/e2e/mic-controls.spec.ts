@@ -1,4 +1,7 @@
 import { test, expect } from "./fixtures";
+import { FEATURES } from "../../src/shared/features";
+
+test.skip(!FEATURES.speechInput, "Speaking to Tusk is switched off (src/shared/features.ts).");
 
 // Chromium's fake microphone plays a beep, so there is always something to hear.
 test.use({ extraArgs: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });

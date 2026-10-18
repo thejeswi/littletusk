@@ -79,7 +79,7 @@ test("02 a click on Tusk opens the chat", async ({ context, demoUrl }) => {
   const page = await context.newPage();
   await openShopQuiet(page, demoUrl);
   await page.locator("button.tusk").click();
-  await expect(page.locator(".panel input").first()).toBeVisible();
+  await expect(page.frameLocator(".compose-frame").locator("#t")).toBeVisible();
   await settle(page, 600);
   await shot(page, "02-chat-open.png");
 });

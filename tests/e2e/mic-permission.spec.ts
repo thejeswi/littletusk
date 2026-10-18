@@ -1,4 +1,7 @@
 import { test, expect } from "./fixtures";
+import { FEATURES } from "../../src/shared/features";
+
+test.skip(!FEATURES.speechInput, "Speaking to Tusk is switched off (src/shared/features.ts).");
 
 test("Speak without microphone permission opens the permission window and says why", async ({ context, demoUrl, tusk }) => {
   await tusk.configure();

@@ -18,7 +18,7 @@ People often use the wrong words for what they mean, and that is fine. Tusk trea
 
 ### Tusk on every page
 
-Tusk lives in the corner of the page. You can drag it anywhere, and you can hide it for this site or for an hour with one click. Click Tusk and the chat opens. You can type there, press the microphone to speak, and find Settings at the top of the chat.
+Tusk lives in the corner of the page. You can drag it anywhere, and you can hide it for this site or for an hour with one click. Click Tusk and the chat opens. You type there, and Settings is at the top of the chat. The typing box keeps working even on sites whose cookie dialogs grab the keyboard.
 
 ![A click on Tusk opens the chat](docs/screenshots/02-chat-open.png)
 
@@ -45,9 +45,9 @@ The chat also works in a narrow window, for example on a small laptop or a phone
 
 ![The chat in a 360 pixel wide window](docs/screenshots/13-narrow.png)
 
-### Speak to Tusk
+### Speak to Tusk (switched off for now)
 
-Press the microphone and talk. Your words land in the same chat, and Tusk can read its answers aloud. Speech is turned into text on your computer with Whisper running in WebAssembly. Your voice is never sent anywhere.
+Speaking to Tusk is built but switched off until it reliably hears people (`speechInput` in `src/shared/features.ts`). When it is on: press the microphone and talk. Your words land in the same chat, and Tusk can read its answers aloud. Speech is turned into text on your computer with Whisper running in WebAssembly. Your voice is never sent anywhere.
 
 ### Safety
 
@@ -170,7 +170,7 @@ Both runs write `test-results/scenarios/<id>/transcript.md` (the chat in order: 
 
 An early prototype. Known gaps:
 
-- Speech has not been verified end to end with a real microphone. Whisper itself is tested on a generated sentence (opt-in test).
+- Speech input is switched off: on one test laptop it did not hear the person yet. Whisper itself is tested on a generated sentence (opt-in test).
 - There is no Chrome Web Store listing yet.
 - The automated tests use a scripted fake model. They have not been run against a live model.
 

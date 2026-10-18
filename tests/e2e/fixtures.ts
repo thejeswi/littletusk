@@ -71,11 +71,12 @@ export const test = base.extend<{ extraArgs: string[]; context: BrowserContext; 
       script: (steps) => set("__faux_script", steps),
       openChat: async (page) => {
         await page.locator("button.tusk").click(); // Tusk always opens the chat
-        await page.locator(".panel input").first().waitFor();
+        await page.frameLocator(".compose-frame").locator("#t").waitFor(); // the typing box is its own frame
       },
       say: async (page, text) => {
-        await page.locator(".panel input").first().fill(text);
-        await page.locator(".panel .send").click();
+        const box = page.frameLocator(".compose-frame");
+        await box.locator("#t").fill(text);
+        await box.locator("#s").click();
       },
     };
     await use(helpers);

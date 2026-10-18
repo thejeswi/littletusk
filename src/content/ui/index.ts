@@ -3,13 +3,13 @@
 import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
 import { LANGUAGE_NAMES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
+import { FEATURES } from "../../shared/features";
 
 export { playground } from "./playground";
 
 type PublicSettings = Omit<Settings, "apiKey">;
 
 export interface OverlayCallbacks {
-  onSend(text: string): void;
   onAnswer(itemId: string, yes: boolean): void;
   onMicStart(): void;
   onMicStop(): void;
@@ -176,27 +176,21 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   label(chatClose, "close", "aria-label");
   chatClose.addEventListener("click", () => setPanel(null));
   const list = h("div", "list", { "aria-live": "polite" });
-  const input = h("input", "", { type: "text", autocomplete: "off", enterkeyhint: "send" });
-  label(input, "typeShort", "placeholder"); label(input, "typeHere", "aria-label");
-  const sendBtn = h("button", "btn yes send", { type: "button" });
-  label(sendBtn, "send");
+  // The typing box is an extension page in an iframe: websites with focus-trapping dialogs (cookie
+  // consent on video sites) or keyboard shortcuts cannot take its focus or swallow its keys, and the
+  // message goes from there straight to the agent, never through the page.
+  const composeUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/compose.html") : "about:blank";
+  const composeFrame = h("iframe", "compose-frame", { src: composeUrl, allowtransparency: "true" });
+  label(composeFrame, "typeHere", "title");
   const micBtn = h("button", "mic", { type: "button" }, "🎤");
   bind(() => micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart")));
   const foot = h("div", "foot");
   chatEl.append(
     h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatSettings, chatClose)),
     list,
-    h("div", "compose", undefined, input, micBtn, sendBtn),
+    h("div", "compose", undefined, composeFrame, ...(FEATURES.speechInput ? [micBtn] : [])),
     foot,
   );
-  const send = () => {
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = "";
-    cb.onSend(text);
-  };
-  sendBtn.addEventListener("click", send);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); send(); } });
   micBtn.addEventListener("click", () => toggleMic());
 
   // settings panel
@@ -278,7 +272,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       if (bubble && (bubble.src === "chat" || bubble.src === "question" || bubble.src === "say")) hideBubble();
       renderChat();
       scrollDown();
-      input.focus({ preventScroll: true }); // the person just asked for the chat
+      composeFrame.focus(); // the person just asked for the chat; the frame hands focus to its text box
     }
     layout();
   }

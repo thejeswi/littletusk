@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Videoportal Musterstadt</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2201; }
+  .consent { position: fixed; left: 50%; top: 8%; transform: translateX(-50%); width: min(640px, 92vw); max-height: 84vh; overflow: auto;
+    background: #fff; border-radius: 12px; padding: 24px 28px; z-index: 2202; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+  .consent h1 { font-size: 24px; margin: 0 0 12px; }
+  .consent .row { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  .consent button { padding: 10px 18px; border-radius: 20px; border: 1px solid #999; background: #fff; font-size: 15px; }
+  .consent button.primary { background: #1a5fb4; color: #fff; border-color: #1a5fb4; }
+</style>
+</head>
+<body>
+<header class="site"><strong>Videoportal Musterstadt</strong></header>
+<main class="wrap"><h2>Lustige Katzenvideos</h2><p>Hier wären Videos zu sehen.</p></main>
+<div class="backdrop"></div>
+<div class="consent" id="consent" role="dialog" aria-modal="true" tabindex="-1">
+  <h1>Bevor Sie weitergehen</h1>
+  <p>Wir verwenden Cookies und Daten, um unsere Dienste bereitzustellen und Werbung anzuzeigen.</p>
+  <div class="row"><button id="reject">Alle ablehnen</button><button class="primary" id="accept">Alle akzeptieren</button><button id="more">Weitere Optionen</button></div>
+</div>
+<span class="demo-badge">Demo</span>
+<script>
+  // Behaves like the consent dialogs of big video sites: focus is pulled back into the dialog,
+  // and letter keys outside text fields are taken as keyboard shortcuts.
+  const consent = document.getElementById("consent");
+  document.addEventListener("focus", (e) => {
+    if (!consent.isConnected) return;
+    if (!e.composedPath().includes(consent)) { e.stopPropagation(); consent.focus(); }
+  }, true);
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !t.isContentEditable) e.preventDefault();
+  }, true);
+  for (const id of ["reject", "accept"]) document.getElementById(id).onclick = () => { consent.remove(); document.querySelector(".backdrop").remove(); };
+  consent.focus();
+</script>
+</body>
+</html>

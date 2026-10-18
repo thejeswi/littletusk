@@ -15,7 +15,7 @@ test.describe("Tusk with a scripted model", () => {
     await page.goto(`${demoUrl}/shop.html`);
     await expect(page.locator("button.tusk")).toBeVisible();
     await page.locator("button.tusk").click(); // opens the chat directly
-    await expect(page.locator(".panel input").first()).toBeVisible();
+    await expect(page.frameLocator(".compose-frame").locator("#t")).toBeVisible();
     await expect(page.locator(".head-btn")).toContainText("Settings");
     await expect(popupOpen(page)).toBeVisible();
     await tusk.say(page, "the box won't close");

@@ -16,7 +16,7 @@ beforeEach(() => {
     return root;
   });
   cb = {
-    onSend: vi.fn(), onAnswer: vi.fn(), onMicStart: vi.fn(), onMicStop: vi.fn(), onMicPause: vi.fn(), onNewTopic: vi.fn(),
+    onAnswer: vi.fn(), onMicStart: vi.fn(), onMicStop: vi.fn(), onMicPause: vi.fn(), onNewTopic: vi.fn(),
     onSettingsChange: vi.fn(), onTuck: vi.fn(), onOpenFamilySettings: vi.fn(), onAcceptOverlayHelp: vi.fn(),
   };
   ctrl = mountOverlay(cb, settings);
@@ -70,12 +70,11 @@ describe("overlay", () => {
     expect(root.querySelector(".q .res")!.textContent).toContain("Yes");
   });
 
-  it("sends on Enter and trims", () => {
+  it("the chat holds the typing box as its own frame, and no microphone while speech is off", () => {
     q<HTMLButtonElement>("button.tusk").click();
-    const input = q<HTMLInputElement>("input[type=text]");
-    input.value = "  help me ";
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(cb.onSend).toHaveBeenCalledWith("help me");
+    expect(root.querySelector(".compose iframe.compose-frame")).toBeTruthy();
+    expect(root.querySelector(".compose input")).toBeNull();
+    expect(root.querySelector(".compose .mic")).toBeNull();
   });
 
   it("switches language and reports setting changes", () => {

@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
         background: resolve(import.meta.dirname, "src/background/index.ts"),
         offscreen: resolve(import.meta.dirname, "src/pages/offscreen.html"),
         setup: resolve(import.meta.dirname, "src/pages/setup.html"),
+        compose: resolve(import.meta.dirname, "src/pages/compose.html"),
         // test-only page (uses the faux provider): only in the e2e build
         ...(mode === "e2e" ? { "storage-selftest": resolve(import.meta.dirname, "src/pages/storage-selftest.html") } : {}),
       },

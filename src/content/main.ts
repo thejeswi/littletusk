@@ -85,7 +85,6 @@ function main() {
   function mount(s: PublicSettings) {
     ctrl = mountOverlay(
       {
-        onSend: (text) => void send({ to: "agent", type: "user-input", text, via: "chat" }),
         onAnswer: (itemId, yes) => void send({ to: "agent", type: "answer", itemId, yes }),
         onMicStart: () => void send({ to: "agent", type: "mic-start" }),
         onMicStop: () => void send({ to: "agent", type: "mic-stop" }),

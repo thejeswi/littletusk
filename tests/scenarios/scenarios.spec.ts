@@ -25,7 +25,7 @@ type Summary = { id: string; title: string; mode: string; live: boolean; passed:
 
 // ---------- driving the chat like a person ----------
 
-const chatOpen = (page: Page) => page.locator(".panel input").first().isVisible();
+const chatOpen = (page: Page) => page.locator(".compose-frame").isVisible();
 async function ensureChat(page: Page, tusk: { openChat(p: Page): Promise<void> }) {
   if (!(await chatOpen(page))) await tusk.openChat(page);
 }
