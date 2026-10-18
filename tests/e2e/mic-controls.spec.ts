@@ -8,7 +8,7 @@ test("listening bubble: labelled microphone switch turns listening off and on, S
   const page = await context.newPage();
   await page.goto(`${demoUrl}/blank.html`);
   await page.locator("button.tusk").click();
-  await page.locator(".menu button", { hasText: "Speak" }).click();
+  await page.locator(".compose .mic").click(); // the microphone button in the chat
 
   const listen = page.locator(".listen");
   await expect(listen.locator(".ltitle")).toHaveText("I'm listening…", { timeout: 15_000 });
@@ -18,6 +18,18 @@ test("listening bubble: labelled microphone switch turns listening off and on, S
   await expect(sw).toContainText("On");
   const stop = listen.getByRole("button", { name: "Stop and send" });
   await expect(stop).toBeVisible();
+  // Started from the open chat, the listening bubble is on top: a click on Stop lands on Stop.
+  const onTop = await page.evaluate(() => {
+    const root = (document.querySelector("[data-littletusk=overlay]") as HTMLElement).shadowRoot!;
+    for (const sel of [".listen .btn.stop", ".listen .switch"]) {
+      const el = root.querySelector(sel) as HTMLElement;
+      const r = el.getBoundingClientRect();
+      const at = root.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if (!(at === el || el.contains(at))) return `${sel} covered by ${at?.className}`;
+    }
+    return "on top";
+  });
+  expect(onTop).toBe("on top");
 
   await sw.click();
   await expect(sw).toHaveAttribute("aria-checked", "false");

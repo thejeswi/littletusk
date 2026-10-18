@@ -6,9 +6,9 @@ test("Speak without microphone permission opens the permission window and says w
   await page.goto(`${demoUrl}/blank.html`);
   await page.locator("button.tusk").click();
   const popup = context.waitForEvent("page", { predicate: (p) => p.url().includes("pages/setup.html#mic"), timeout: 30_000 });
-  await page.locator(".menu button", { hasText: "Speak" }).click();
+  await page.locator(".compose .mic").click(); // the microphone button in the chat
   const win = await popup;
   await expect(win.locator("#micBtn")).toBeVisible();
-  // The person is told what to do even with the chat closed.
-  await expect(page.locator(".bubble")).toContainText("permission", { timeout: 10_000 });
+  // The person is told what to do, in the chat they started speaking from.
+  await expect(page.locator(".panel .list")).toContainText("permission", { timeout: 10_000 });
 });

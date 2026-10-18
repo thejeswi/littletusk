@@ -75,13 +75,13 @@ test("01 Tusk on the page", async ({ context, demoUrl }) => {
   await shot(page, "01-tusk-on-page.png");
 });
 
-test("02 the menu", async ({ context, demoUrl }) => {
+test("02 a click on Tusk opens the chat", async ({ context, demoUrl }) => {
   const page = await context.newPage();
   await openShopQuiet(page, demoUrl);
   await page.locator("button.tusk").click();
-  await expect(page.locator(".menu button")).toHaveCount(3);
+  await expect(page.locator(".panel input").first()).toBeVisible();
   await settle(page, 600);
-  await shot(page, "02-menu.png");
+  await shot(page, "02-chat-open.png");
 });
 
 test("03 pointing at the tiny cross", async ({ context, demoUrl, tusk }) => {
@@ -192,7 +192,7 @@ test("09 settings", async ({ context, demoUrl }) => {
   const page = await context.newPage();
   await openShopQuiet(page, demoUrl);
   await page.locator("button.tusk").click();
-  await page.locator(".menu button", { hasText: "Settings" }).click();
+  await page.locator(".head-btn").click();
   await expect(page.locator(".panel:not([hidden])")).toBeVisible();
   await settle(page, 600);
   // everything in the settings popover is visible without scrolling

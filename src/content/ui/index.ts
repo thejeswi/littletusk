@@ -1,4 +1,4 @@
-// On-page overlay: the floating baby elephant "Tusk", its menu, chat, settings and target marks.
+// On-page overlay: the floating baby elephant "Tusk", its chat, settings and target marks. Clicking Tusk opens the chat.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
 import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
 import { LANGUAGE_NAMES, t, type I18nKey } from "../../shared/i18n";
@@ -65,7 +65,7 @@ const GAP = 12;
 const MARGIN = 16;
 
 interface Rect { l: number; t: number; r: number; b: number }
-type Panel = null | "menu" | "chat" | "settings";
+type Panel = null | "chat" | "settings";
 type Bubble = {
   text: string;
   src: "say" | "point" | "chat" | "question" | "offer";
@@ -127,13 +127,13 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const hl = h("div", "hl"); hl.hidden = true;
   const askFrame = h("div", "ask-frame"); askFrame.hidden = true;
 
-  const tusk = h("button", "tusk", { type: "button", "aria-haspopup": "menu" });
+  const tusk = h("button", "tusk", { type: "button", "aria-haspopup": "dialog" });
   const flipEl = h("div", "flip");
   const breathe = h("div", "breathe");
   const rest = h("div", "pose-rest"); rest.innerHTML = REST_SVG;
   const point = h("div", "pose-point"); point.innerHTML = POINT_SVG;
   breathe.append(rest, point); flipEl.append(breathe); tusk.append(flipEl);
-  bind(() => tusk.setAttribute("aria-label", t(lang(), "tuskName") + ": " + t(lang(), "menuLabel")));
+  bind(() => tusk.setAttribute("aria-label", t(lang(), "tuskName") + ": " + t(lang(), "chat")));
 
   const bubbleEl = h("div", "bubble", { role: "status" }); bubbleEl.hidden = true;
 
@@ -162,26 +162,17 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   listenEl.append(listenTxt, h("div", "wave", undefined, ...waveBars), listenCtl, listenHint);
   label(listenHint, "tapToStop");
 
-  // menu
-  const menu = h("div", "menu", { role: "menu" }); menu.hidden = true;
-  const menuItem = (icon: string, key: I18nKey, fn: () => void) => {
-    const lbl = h("span", "lbl");
-    label(lbl, key);
-    const b = h("button", "", { type: "button", role: "menuitem" }, lbl, h("span", "circ", { "aria-hidden": "true" }, icon));
-    b.addEventListener("click", fn);
-    return b;
-  };
-  menu.append(
-    menuItem("💬", "chat", () => setPanel("chat")),
-    menuItem("🎤", "speak", () => { setPanel(null); toggleMic(); }),
-    menuItem("⚙️", "settings", () => setPanel("settings")),
-  );
-
   // chat panel
   const chatEl = h("div", "panel"); chatEl.hidden = true;
   chatEl.setAttribute("role", "dialog");
   const chatTitle = h("h2"); label(chatTitle, "tuskName");
   const chatClose = h("button", "x", { type: "button" }, "✕");
+  // Settings live behind a labelled button in the chat header (the chat is what Tusk opens).
+  const chatSettings = h("button", "head-btn", { type: "button" });
+  const chatSettingsTxt = h("span");
+  chatSettings.append(h("span", "", { "aria-hidden": "true" }, "⚙️"), chatSettingsTxt);
+  label(chatSettingsTxt, "settings");
+  chatSettings.addEventListener("click", () => setPanel("settings"));
   label(chatClose, "close", "aria-label");
   chatClose.addEventListener("click", () => setPanel(null));
   const list = h("div", "list", { "aria-live": "polite" });
@@ -193,7 +184,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   bind(() => micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart")));
   const foot = h("div", "foot");
   chatEl.append(
-    h("div", "head", undefined, chatTitle, chatClose),
+    h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatSettings, chatClose)),
     list,
     h("div", "compose", undefined, input, micBtn, sendBtn),
     foot,
@@ -214,7 +205,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const setTitle = h("h2"); label(setTitle, "settings");
   const setClose = h("button", "x", { type: "button" }, "✕");
   label(setClose, "close", "aria-label");
-  setClose.addEventListener("click", () => setPanel(null));
+  setClose.addEventListener("click", () => setPanel("chat")); // back to the chat it was opened from
   const langSel = h("select");
   (Object.keys(LANGUAGE_NAMES) as Language[]).forEach((l) => langSel.append(h("option", "", { value: l }, LANGUAGE_NAMES[l])));
   langSel.addEventListener("change", () => changeSettings({ language: langSel.value as Language }));
@@ -251,7 +242,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     ),
   );
 
-  layer.append(dim, hl, askFrame, bubbleEl, listenEl, menu, chatEl, setEl, tusk);
+  layer.append(dim, hl, askFrame, bubbleEl, chatEl, setEl, tusk, listenEl);
 
   // keep keystrokes and Escape inside the overlay away from the page
   for (const ev of ["keydown", "keyup", "keypress"] as const) {
@@ -280,10 +271,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   // ---------- panels ----------
   function setPanel(p: Panel) {
     panel = p;
-    menu.hidden = p !== "menu";
     chatEl.hidden = p !== "chat";
     setEl.hidden = p !== "settings";
-    tusk.setAttribute("aria-expanded", String(p === "menu"));
+    tusk.setAttribute("aria-expanded", String(p === "chat"));
     if (p === "chat") {
       if (bubble && (bubble.src === "chat" || bubble.src === "question" || bubble.src === "say")) hideBubble();
       renderChat();
@@ -293,7 +283,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     layout();
   }
   function closeTransient() {
-    if (panel === "menu" || panel === "settings") setPanel(null);
+    if (panel === "settings") setPanel(null);
   }
   document.addEventListener("keydown", onDocKey);
   function onDocKey(e: KeyboardEvent) { if (e.key === "Escape") closeTransient(); }
@@ -527,13 +517,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     // panels
     if (!chatEl.hidden) placePanel(chatEl, 380, 540);
     if (!setEl.hidden) placePanel(setEl, 340, 660);
-    if (!menu.hidden) {
-      const onRight = p.x + S / 2 > vw() / 2;
-      menu.classList.toggle("left-side", !onRight);
-      const w = menu.offsetWidth || 200, hh = menu.offsetHeight || 210;
-      put(menu, clamp(onRight ? p.x - w - 8 : p.x + S + 8, 8, Math.max(8, vw() - w - 8)), clamp(p.y + S - hh, 8, Math.max(8, vh() - hh - 8)));
-    }
-    const panelBox = !chatEl.hidden ? boxRect(chatEl) : !setEl.hidden ? boxRect(setEl) : !menu.hidden ? boxRect(menu) : null;
+    const panelBox = !chatEl.hidden ? boxRect(chatEl) : !setEl.hidden ? boxRect(setEl) : null;
     if (panelBox) avoid.push(panelBox);
 
     let prefer: "up" | "away-left" | "away-right" = "up";
@@ -599,7 +583,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   }
 
   function startMark(el: Element, st: Mark["style"], text: string, src: Bubble["src"], buttons?: Bubble["buttons"]) {
-    setPanelIfMenu();
+    closeSettingsForMark();
     mark = { el, style: st };
     lastMarkKey = "";
     try {
@@ -613,7 +597,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     showBubble({ text, src, buttons });
     if (!rafId && typeof requestAnimationFrame === "function") rafId = requestAnimationFrame(track);
   }
-  function setPanelIfMenu() { if (panel === "menu" || panel === "settings") setPanel(null); }
+  function closeSettingsForMark() { if (panel === "settings") setPanel(null); }
 
   // ---------- dragging ----------
   let drag: { sx: number; sy: number; ox: number; oy: number; moved: boolean; id: number } | null = null;
@@ -643,8 +627,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   tusk.addEventListener("pointercancel", endDrag);
   tusk.addEventListener("click", () => {
     if (suppressClick) return;
-    if (panel === null) setPanel("menu");
-    else setPanel(null);
+    setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat
   });
   window.addEventListener("resize", onResize);
   function onResize() { lastMarkKey = ""; layout(); }

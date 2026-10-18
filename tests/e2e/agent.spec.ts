@@ -4,7 +4,7 @@ const CLOSE = "@find:✕";
 const popupOpen = (page: import("@playwright/test").Page) => page.locator("#nl.open");
 
 test.describe("Tusk with a scripted model", () => {
-  test("a. overlay, menu, chat; points at the close button and does not click it", async ({ context, demoUrl, tusk }) => {
+  test("a. overlay, chat; points at the close button and does not click it", async ({ context, demoUrl, tusk }) => {
     await tusk.configure();
     await tusk.script([
       { tools: [{ name: "read_page" }] },
@@ -14,9 +14,9 @@ test.describe("Tusk with a scripted model", () => {
     const page = await context.newPage();
     await page.goto(`${demoUrl}/shop.html`);
     await expect(page.locator("button.tusk")).toBeVisible();
-    await page.locator("button.tusk").click();
-    await expect(page.locator(".menu button")).toHaveText([/Chat/, /Speak/, /Settings/]);
-    await page.locator(".menu button", { hasText: "Chat" }).click();
+    await page.locator("button.tusk").click(); // opens the chat directly
+    await expect(page.locator(".panel input").first()).toBeVisible();
+    await expect(page.locator(".head-btn")).toContainText("Settings");
     await expect(popupOpen(page)).toBeVisible();
     await tusk.say(page, "the box won't close");
     await expect(page.locator(".msg.user")).toHaveText("the box won't close");

@@ -70,8 +70,7 @@ export const test = base.extend<{ extraArgs: string[]; context: BrowserContext; 
       },
       script: (steps) => set("__faux_script", steps),
       openChat: async (page) => {
-        await page.locator("button.tusk").click();
-        await page.locator(".menu button", { hasText: "Chat" }).click();
+        await page.locator("button.tusk").click(); // Tusk always opens the chat
         await page.locator(".panel input").first().waitFor();
       },
       say: async (page, text) => {

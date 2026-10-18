@@ -18,9 +18,9 @@ People often use the wrong words for what they mean, and that is fine. Tusk trea
 
 ### Tusk on every page
 
-Tusk lives in the corner of the page. You can drag it anywhere, and you can hide it for this site or for an hour with one click. Click Tusk and three big buttons appear: Chat, Speak and Settings.
+Tusk lives in the corner of the page. You can drag it anywhere, and you can hide it for this site or for an hour with one click. Click Tusk and the chat opens. You can type there, press the microphone to speak, and find Settings at the top of the chat.
 
-![The menu: Chat, Speak, Settings](docs/screenshots/02-menu.png)
+![A click on Tusk opens the chat](docs/screenshots/02-chat-open.png)
 
 ### "Show me how" or "Look after me"
 

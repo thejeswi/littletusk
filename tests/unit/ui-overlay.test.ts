@@ -35,17 +35,23 @@ describe("overlay", () => {
     expect(root.activeElement).toBeNull();
   });
 
-  it("opens the menu with three labelled buttons and closes on Escape", () => {
+  it("clicking Tusk opens the chat; Settings in its header opens settings and closing them returns to the chat", () => {
+    const chat = () => root.querySelectorAll<HTMLElement>(".panel")[0];
+    const settings = () => root.querySelectorAll<HTMLElement>(".panel")[1];
     q<HTMLButtonElement>("button.tusk").click();
-    expect(q<HTMLElement>(".menu").hidden).toBe(false);
-    expect([...root.querySelectorAll(".menu .lbl")].map((e) => e.textContent)).toEqual(["Chat", "Speak", "Settings"]);
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    expect(q<HTMLElement>(".menu").hidden).toBe(true);
+    expect(chat().hidden).toBe(false);
+    expect(q(".head-btn").textContent).toContain("Settings");
+    q<HTMLButtonElement>(".head-btn").click();
+    expect(settings().hidden).toBe(false);
+    expect(chat().hidden).toBe(true);
+    settings().querySelector<HTMLButtonElement>(".head .x")!.click();
+    expect(chat().hidden).toBe(false);
+    q<HTMLButtonElement>("button.tusk").click();
+    expect(chat().hidden).toBe(true);
   });
 
   it("renders view items and calls onAnswer once", () => {
     q<HTMLButtonElement>("button.tusk").click();
-    root.querySelector<HTMLButtonElement>(".menu button")!.click();
     ctrl.setView(view([
       { kind: "user", id: "1", text: "hi" },
       { kind: "tusk", id: "2", text: "hello" },
@@ -66,7 +72,6 @@ describe("overlay", () => {
 
   it("sends on Enter and trims", () => {
     q<HTMLButtonElement>("button.tusk").click();
-    root.querySelector<HTMLButtonElement>(".menu button")!.click();
     const input = q<HTMLInputElement>("input[type=text]");
     input.value = "  help me ";
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -78,8 +83,7 @@ describe("overlay", () => {
     sel.value = "de";
     sel.dispatchEvent(new Event("change"));
     expect(cb.onSettingsChange).toHaveBeenCalledWith({ language: "de" });
-    expect(q(".menu .lbl").textContent).toBe("Chat");
-    expect(root.querySelector(".menu button:nth-child(3) .lbl")!.textContent).toBe("Einstellungen");
+    expect(q(".head-btn").textContent).toContain("Einstellungen");
   });
 
   it("points, shows bubble and clears", () => {

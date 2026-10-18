@@ -32,7 +32,7 @@ button.tusk.pointing .pose-point{display:block}
 .bubble .txt{white-space:pre-wrap;overflow-wrap:anywhere}
 .bubble .btns{display:flex;gap:10px;margin-top:10px}
 .listen{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.listen{gap:10px;max-width:min(360px,calc(100vw - 16px))}
+.listen{z-index:3;gap:10px;max-width:min(360px,calc(100vw - 16px))}
 .listen .ltitle{font-size:18px;font-weight:700;color:#1f2933}
 .listen.paused .wave{opacity:.25}
 .lctl{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
@@ -61,20 +61,15 @@ button.tusk.pointing .pose-point{display:block}
 .btn:disabled{opacity:.55;cursor:default}
 .btn.chosen{opacity:1;outline:3px solid #1f2933}
 
-/* Menu */
-.menu{position:fixed;z-index:2;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
-.menu button{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0}
-.menu .lbl{background:#fff;border:2px solid #99bbbb;border-radius:20px;padding:8px 16px;font-size:18px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.menu .circ{width:56px;height:56px;border-radius:50%;background:#fff;border:2px solid #99bbbb;display:flex;align-items:center;
-  justify-content:center;font-size:26px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-.menu.left-side button{flex-direction:row-reverse}
-.menu.left-side{align-items:flex-start}
-
 /* Panels */
 .panel{position:fixed;z-index:2;background:#fff;border:2px solid #99bbbb;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28);
   display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 16px;background:#eef3f6;border-bottom:1px solid #d3dde3}
 .head h2{margin:0;font-size:20px;font-weight:700}
+.head-right{display:flex;align-items:center;gap:8px}
+.head-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;border:2px solid #99bbbb;border-radius:22px;
+  background:#fff;color:#1f2933;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.head-btn:focus-visible{outline:3px solid #ffb703;outline-offset:2px}
 .x{width:48px;height:48px;border-radius:50%;border:0;background:#fff;font-size:22px;line-height:1}
 .list{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:80px}
 .msg{max-width:88%;padding:10px 14px;border-radius:18px;font-size:17px;white-space:pre-wrap;overflow-wrap:anywhere}
