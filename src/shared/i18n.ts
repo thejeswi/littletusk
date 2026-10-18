@@ -48,6 +48,13 @@ const en = {
   offerAd: "That looks like an advertisement. Shall I close it?",
   offerPopup: "A popup is in your way. Shall I close it?",
   offerGeneric: "Something is covering the page. Shall I try to close it?",
+  actChose: "Chose {name}",
+  actBack: "Went back a page",
+  actOpened: "Opened {name}",
+  actAskedType: "Asked you to type in {name}",
+  modelError: "I could not think just now. Please try again in a moment, or ask your family to check my setup.",
+  micSoon: "Speaking is coming soon.",
+  micError: "I could not use the microphone. Ask your family to allow it in my setup.",
 } as const;
 
 export type I18nKey = keyof typeof en;
@@ -100,6 +107,13 @@ const de: Table = {
   offerAd: "Das sieht nach Werbung aus. Soll ich sie schließen?",
   offerPopup: "Ein Popup ist Ihnen im Weg. Soll ich es schließen?",
   offerGeneric: "Etwas verdeckt die Seite. Soll ich versuchen, es zu schließen?",
+  actChose: "{name} ausgewählt",
+  actBack: "Eine Seite zurückgegangen",
+  actOpened: "{name} geöffnet",
+  actAskedType: "Sie gebeten, in {name} zu schreiben",
+  modelError: "Ich konnte gerade nicht nachdenken. Bitte versuchen Sie es gleich noch einmal oder bitten Sie Ihre Familie, meine Einstellungen zu prüfen.",
+  micSoon: "Sprechen kommt bald.",
+  micError: "Ich konnte das Mikrofon nicht benutzen. Bitten Sie Ihre Familie, es in meinen Einstellungen zu erlauben.",
 };
 
 const es: Table = {
@@ -149,6 +163,13 @@ const es: Table = {
   offerAd: "Eso parece un anuncio. ¿Lo cierro?",
   offerPopup: "Una ventana emergente le estorba. ¿La cierro?",
   offerGeneric: "Algo tapa la página. ¿Intento cerrarlo?",
+  actChose: "Elegí {name}",
+  actBack: "Volví a la página anterior",
+  actOpened: "Abrí {name}",
+  actAskedType: "Le pedí que escriba en {name}",
+  modelError: "No pude pensar ahora mismo. Inténtelo de nuevo en un momento o pida a su familia que revise mi configuración.",
+  micSoon: "Hablar llegará pronto.",
+  micError: "No pude usar el micrófono. Pida a su familia que lo permita en mi configuración.",
 };
 
 const enIN: Table = {

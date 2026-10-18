@@ -1,6 +1,25 @@
 import { test, expect } from "./fixtures";
 
+// The agent owns the database (only one owner at a time), so these specs switch it off first.
+async function agentOff(context: any) {
+  let [sw] = context.serviceWorkers();
+  if (!sw) sw = await context.waitForEvent("serviceworker");
+  await sw.evaluate(() => chrome.storage.local.set({ __no_offscreen: true }));
+  // The service worker may still be starting the agent's document: close it until it stays gone.
+  let quiet = 0;
+  for (let i = 0; i < 30 && quiet < 3; i++) {
+    const open = await sw.evaluate(async () => {
+      const found = (await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT" as any] })).length > 0;
+      if (found) await chrome.offscreen.closeDocument();
+      return found;
+    });
+    quiet = open ? 0 : quiet + 1;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
 async function run(context: any, extensionId: string, mode: string) {
+  await agentOff(context);
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/pages/storage-selftest.html?mode=${mode}`);
   await expect(page.locator("#out[data-state]")).toBeVisible({ timeout: 120_000 });

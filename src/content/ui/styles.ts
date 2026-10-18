@@ -13,16 +13,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 [hidden]{display:none!important}
 
 /* Tusk */
-.tusk{position:fixed;width:72px;height:72px;padding:0;border:0;background:none;cursor:grab;touch-action:none;
+button.tusk{position:fixed;width:72px;height:72px;padding:0;border:0;background:none;cursor:grab;touch-action:none;
   transition:left .6s ease-in-out,top .6s ease-in-out;-webkit-tap-highlight-color:transparent;user-select:none}
-.tusk.dragging{transition:none;cursor:grabbing}
-.tusk .flip{width:100%;height:100%;transition:transform .2s}
-.tusk .flip.left{transform:scaleX(-1)}
-.tusk .breathe{width:100%;height:100%;transform-origin:50% 90%;animation:breathe 4.5s ease-in-out infinite}
-.tusk svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
-.tusk .pose-point{display:none}
-.tusk.pointing .pose-rest{display:none}
-.tusk.pointing .pose-point{display:block}
+button.tusk.dragging{transition:none;cursor:grabbing}
+button.tusk .flip{width:100%;height:100%;transition:transform .2s}
+button.tusk .flip.left{transform:scaleX(-1)}
+button.tusk .breathe{width:100%;height:100%;transform-origin:50% 90%;animation:breathe 4.5s ease-in-out infinite}
+button.tusk svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+button.tusk .pose-point{display:none}
+button.tusk.pointing .pose-rest{display:none}
+button.tusk.pointing .pose-point{display:block}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045,1.03)}}
 
 /* Bubbles */
@@ -97,8 +97,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,183,3,.45)}50%{box-shadow:0 0 0 10px rgba(255,183,3,.12)}}
 
 @media (prefers-reduced-motion:reduce){
-  .tusk,.bubble,.listen{transition:none}
-  .tusk .breathe,.hl,.ask-frame{animation:none}
+  button.tusk,.bubble,.listen{transition:none}
+  button.tusk .breathe,.hl,.ask-frame{animation:none}
   .wave i{transition:none}
 }
 `;

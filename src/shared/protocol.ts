@@ -88,9 +88,10 @@ export type PageCommand =
   | { op: "point"; id: string; say: string }
   | { op: "spotlight"; id: string; say: string }
   | { op: "clear" }
-  | { op: "click"; id: string }
-  | { op: "type"; id: string; text: string; enter: boolean }
-  | { op: "select"; id: string; option: string }
+  // `confirmed` is set ONLY by the agent's code-enforced confirmation state, never by the model.
+  | { op: "click"; id: string; confirmed?: boolean }
+  | { op: "type"; id: string; text: string; enter: boolean; confirmed?: boolean }
+  | { op: "select"; id: string; option: string; confirmed?: boolean }
   | { op: "scroll"; direction: "up" | "down" }
   | { op: "back" }
   | { op: "ask-type"; id: string; say: string }
@@ -127,7 +128,11 @@ export type ToAgent =
   | { to: "agent"; type: "settings-changed" }
   | { to: "agent"; type: "mic-start"; tabId?: number }
   | { to: "agent"; type: "mic-stop" }
-  | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string }; // person accepted help in look-after mode
+  | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string } // person accepted help in look-after mode
+  | { to: "agent"; type: "log-action"; text: string; tabId?: number }; // an action done locally (no model call), shown in the chat log
+
+/** What the service worker adds when it forwards a ToAgent message to the offscreen document. */
+export type RelayedToAgent = ToAgent & { relayed: true };
 
 // Agent -> service worker
 export type FromAgent =
@@ -135,7 +140,17 @@ export type FromAgent =
   | { to: "sw"; type: "broadcast-view"; view: ChatView }
   | { to: "sw"; type: "speak"; text: string; lang: Language }
   | { to: "sw"; type: "mic-level"; level: number; listening: boolean } // for the listening wave
-  | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string };
+  | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string }
+  | { to: "sw"; type: "get-settings" } // full settings including the key; only the offscreen document may ask
+  | { to: "sw"; type: "e2e-get"; key: string } // test builds only
+  | { to: "sw"; type: "e2e-set"; key: string; value: unknown }; // test builds only
+
+// Content script -> service worker
+export type FromContent =
+  | { to: "sw"; type: "get-public-settings" }
+  | { to: "sw"; type: "patch-settings"; patch: Partial<Pick<Settings, "language" | "mode" | "speakAnswers">> }
+  | { to: "sw"; type: "tuck"; scope: "site" | "hour" }
+  | { to: "sw"; type: "open-setup" };
 
 // Service worker -> content script
 export type ToContent =

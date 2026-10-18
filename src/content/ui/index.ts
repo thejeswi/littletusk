@@ -114,7 +114,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   // ---------- DOM skeleton ----------
   const host = document.createElement("div");
   host.setAttribute("data-littletusk", "overlay");
-  const root = host.attachShadow({ mode: "closed" });
+  const root = host.attachShadow({ mode: __E2E__ ? "open" : "closed" }); // open only in test builds, so Playwright can reach it
   const style = document.createElement("style");
   style.textContent = CSS;
   const layer = h("div", "layer");

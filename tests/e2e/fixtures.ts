@@ -1,4 +1,4 @@
-import { test as base, chromium, type BrowserContext } from "@playwright/test";
+import { test as base, chromium, type BrowserContext, type Page, type Worker } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import { readFile } from "node:fs/promises";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -7,13 +7,31 @@ import { join, resolve, normalize } from "node:path";
 import type { AddressInfo } from "node:net";
 
 const root = resolve(import.meta.dirname, "../..");
-const dist = join(root, "dist");
+// End-to-end tests run the test build (npm run build:e2e): same code plus the scripted fake model.
+const dist = join(root, "dist-e2e");
 const demoDir = join(root, "demo");
 const types: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json" };
 
-// Usage: import { test, expect } from "./fixtures"; test("...", async ({ context, extensionId, demoUrl }) => {...})
-// Needs `npm run build` first. Runs headless (new headless supports extensions).
-export const test = base.extend<{ context: BrowserContext; extensionId: string; demoUrl: string }>({
+export type Step = { text?: string; tools?: { name: string; args?: Record<string, unknown> }[] };
+
+/** Helpers for the extension's storage and the scripted model, run inside the service worker. */
+export interface Tusk {
+  sw: Worker;
+  /** Faux provider + a fake key, merged with `patch`. Call before opening pages. */
+  configure(patch?: Record<string, unknown>): Promise<void>;
+  /** Replace the scripted model's answers (steps: see src/offscreen/faux.ts). */
+  script(steps: Step[]): Promise<void>;
+  get(key: string): Promise<unknown>;
+  set(key: string, value: unknown): Promise<void>;
+  /** Open the chat panel of the overlay on `page`. */
+  openChat(page: Page): Promise<void>;
+  /** Type into the chat and send. */
+  say(page: Page, text: string): Promise<void>;
+}
+
+// Usage: import { test, expect } from "./fixtures"; test("...", async ({ context, extensionId, demoUrl, tusk }) => {...})
+// Needs `npm run build:e2e` first. Runs headless (new headless supports extensions).
+export const test = base.extend<{ context: BrowserContext; extensionId: string; demoUrl: string; tusk: Tusk }>({
   // eslint-disable-next-line no-empty-pattern
   context: async ({}, use) => {
     const userDataDir = await mkdtemp(join(tmpdir(), "littletusk-"));
@@ -30,6 +48,37 @@ export const test = base.extend<{ context: BrowserContext; extensionId: string; 
     let [sw] = context.serviceWorkers();
     if (!sw) sw = await context.waitForEvent("serviceworker");
     await use(new URL(sw.url()).host);
+  },
+  tusk: async ({ context, extensionId }, use) => {
+    void extensionId;
+    let [sw] = context.serviceWorkers();
+    if (!sw) sw = await context.waitForEvent("serviceworker");
+    const set = (key: string, value: unknown) => sw.evaluate(([k, v]) => chrome.storage.local.set({ [k as string]: v }), [key, value] as const);
+    const helpers: Tusk = {
+      sw,
+      set,
+      get: (key) => sw.evaluate(async (k) => (await chrome.storage.local.get(k))[k], key),
+      configure: async (patch = {}) => {
+        await sw.evaluate(async (p) => {
+          const got = (await chrome.storage.local.get("settings")).settings ?? {};
+          await chrome.storage.local.set({
+            settings: { ...got, provider: "faux", model: "faux-1", strongModel: "faux-1", apiKey: "test-key-0000", setupDone: true, language: "en", mode: "show", monthlyLimit: 0, ...p },
+          });
+        }, patch);
+        await new Promise((r) => setTimeout(r, 400)); // let the agent pick the new settings up
+      },
+      script: (steps) => set("__faux_script", steps),
+      openChat: async (page) => {
+        await page.locator("button.tusk").click();
+        await page.locator(".menu button", { hasText: "Chat" }).click();
+        await page.locator(".panel input").first().waitFor();
+      },
+      say: async (page, text) => {
+        await page.locator(".panel input").first().fill(text);
+        await page.locator(".panel .send").click();
+      },
+    };
+    await use(helpers);
   },
   // Base URL of a static server for demo/, e.g. `${demoUrl}/blank.html`.
   // eslint-disable-next-line no-empty-pattern
