@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beispiel-Shop – Gartenstuhl Linde</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+.product { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; }
+.pic { background:linear-gradient(135deg,#d9e8d2,#b7d3c6); border-radius:12px; min-height:260px; display:flex; align-items:center; justify-content:center; font-size:64px; }
+.price { font-size:28px; font-weight:700; margin:8px 0 16px; }
+@media (max-width:640px){ .product{grid-template-columns:1fr} }
+.backdrop { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; display:none; align-items:center; justify-content:center; padding:16px; }
+.backdrop.open { display:flex; }
+.popup { position:relative; background:#fff; border-radius:12px; padding:32px; max-width:420px; width:100%; text-align:center; }
+.popup h2 { margin-top:0; }
+.popup input[type=email] { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; margin:12px 0; font-size:16px; }
+.popup .close { position:absolute; top:6px; right:8px; background:none; border:0; color:#c4c7cc; font-size:11px; line-height:1; cursor:pointer; padding:2px; }
+</style></head>
+<body>
+<header class="site"><b>Beispiel-Shop</b><a href="#">Garten</a><a href="#">Möbel</a><a href="#">Angebote</a></header>
+<main>
+  <div class="card product">
+    <div class="pic" aria-hidden="true">🪑</div>
+    <div>
+      <h1>Gartenstuhl „Linde“</h1>
+      <p>Bequemer Klappstuhl aus Akazienholz. Wetterfest, leicht und in zwei Minuten aufgebaut.</p>
+      <div class="price">39,90 €</div>
+      <button class="primary" type="button" onclick="document.getElementById('msg').textContent='Danke für Ihre Bestellung (Demo).'">Jetzt kaufen</button>
+      <p id="msg" role="status"></p>
+    </div>
+  </div>
+</main>
+<div class="backdrop" id="nl" role="dialog" aria-modal="true" aria-label="Newsletter">
+  <div class="popup newsletter-popup">
+    <button class="close" type="button">✕</button>
+    <h2>Newsletter abonnieren!</h2>
+    <p>Sichern Sie sich 10 % Rabatt auf Ihre erste Bestellung.</p>
+    <input type="email" placeholder="Ihre E-Mail-Adresse" aria-label="E-Mail-Adresse">
+    <button class="primary" type="button">Rabatt sichern</button>
+  </div>
+</div>
+<span class="demo-badge">Demo</span>
+<script>
+var nl = document.getElementById('nl');
+setTimeout(function(){ nl.classList.add('open'); }, 1000);
+nl.querySelector('.close').addEventListener('click', function(){ nl.classList.remove('open'); });
+</script>
+</body></html>

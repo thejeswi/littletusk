@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stadtwerke Musterstadt – Zählerstand melden</title>
+<link rel="stylesheet" href="page-assets/demo.css">
+<style>
+form { display:grid; gap:16px; max-width:460px; }
+label { display:grid; gap:4px; font-weight:600; font-size:15px; }
+input { padding:10px 12px; font-size:16px; border:1px solid #cbd5e1; border-radius:8px; font-weight:400; }
+.hint { font-weight:400; color:var(--muted); font-size:13px; }
+#done { color:var(--brand); font-weight:600; }
+</style></head>
+<body>
+<header class="site"><b>Stadtwerke Musterstadt</b><a href="#">Strom</a><a href="#">Wasser</a><a href="#">Kundenportal</a></header>
+<main>
+  <section class="card">
+    <h1>Zählerstand melden</h1>
+    <p>Bitte geben Sie Ihre Daten ein. Die Meldung dauert etwa eine Minute.</p>
+    <form id="f" action="#gesendet">
+      <label>Kundennummer <input name="kundennummer" autocomplete="off" placeholder="z. B. 4711-0815"></label>
+      <label>Zählernummer <input name="zaehlernummer" autocomplete="off" placeholder="steht auf dem Zähler"></label>
+      <label>Zählerstand (kWh) <input name="stand" inputmode="numeric" autocomplete="off"></label>
+      <label>Kundenkennwort <input type="password" name="kennwort" autocomplete="current-password"><span class="hint">Ihr persönliches Kennwort aus dem Kundenportal.</span></label>
+      <button class="primary" type="submit">Absenden</button>
+    </form>
+    <p id="done" role="status"></p>
+  </section>
+</main>
+<span class="demo-badge">Demo</span>
+<script>
+document.getElementById('f').addEventListener('submit', function(e){ e.preventDefault(); document.getElementById('done').textContent = 'Vielen Dank, Ihr Zählerstand wurde gemeldet (Demo).'; });
+</script>
+</body></html>
