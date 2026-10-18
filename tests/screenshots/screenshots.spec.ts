@@ -192,7 +192,7 @@ test("09 settings", async ({ context, demoUrl }) => {
   const page = await context.newPage();
   await openShopQuiet(page, demoUrl);
   await page.locator("button.tusk").click();
-  await page.locator(".head-btn").click();
+  await page.locator(".head-btn", { hasText: "Settings" }).click();
   await expect(page.locator(".panel:not([hidden])")).toBeVisible();
   await settle(page, 600);
   // everything in the settings popover is visible without scrolling

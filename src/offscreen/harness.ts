@@ -397,16 +397,22 @@ export class TuskAgent {
     this.watchSubmission(sub);
   }
 
+  /** Start a fresh chat: stop what Tusk is doing, forget this conversation and greet again. */
   private async newTopic() {
+    void this.speech?.stop().catch(() => undefined); // end any listening session without sending it
+    this.micSubmitted = true;
+    await this.root.abort(ctx); // an answer in progress, queued messages, a pending question
     await this.update((s) => {
       s.grantConfirm = false;
       s.doIt = false;
       s.failStreak = 0;
       s.stillCount = 0;
       s.escalated = false;
+      s.greeted = false;
     });
     await this.root.reset(undefined, ctx);
     await this.applyModel();
+    await this.maybeGreet();
     this.broadcaster.call();
   }
 

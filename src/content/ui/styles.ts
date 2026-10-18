@@ -66,7 +66,14 @@ button.tusk.pointing .pose-point{display:block}
   display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 16px;background:#eef3f6;border-bottom:1px solid #d3dde3}
 .head h2{margin:0;font-size:20px;font-weight:700}
-.head-right{display:flex;align-items:center;gap:8px}
+.head-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.head-btn{white-space:nowrap}
+@media (max-width:480px){
+  .head{flex-wrap:wrap}
+  .head h2{flex:1}
+  .head-right{order:3;flex-basis:100%;margin-left:0}
+  .head-right .head-btn{flex:1;justify-content:center}
+}
 .head-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;border:2px solid #99bbbb;border-radius:22px;
   background:#fff;color:#1f2933;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
 .head-btn:focus-visible{outline:3px solid #ffb703;outline-offset:2px}

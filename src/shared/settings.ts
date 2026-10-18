@@ -5,9 +5,36 @@ export async function loadSettings(): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...((got[SETTINGS_KEY] as Partial<Settings> | undefined) ?? {}) };
 }
 
-export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
-  const next = { ...(await loadSettings()), ...patch };
-  await chrome.storage.local.set({ [SETTINGS_KEY]: next });
+// Every provider keeps its own key (a DeepSeek key is not an Anthropic key). They live under their own
+// storage entry; `settings.apiKey` stays the key of the provider in use, which is all the agent reads.
+const KEYS_KEY = "apiKeys";
+
+/** The saved key of every provider. A key saved before this existed is filed under its provider. */
+export async function loadApiKeys(): Promise<Record<string, string>> {
+  const got = await chrome.storage.local.get([KEYS_KEY, SETTINGS_KEY]);
+  const keys = { ...((got[KEYS_KEY] as Record<string, string> | undefined) ?? {}) };
+  const s = (got[SETTINGS_KEY] as Partial<Settings> | undefined) ?? {};
+  const active = s.provider ?? DEFAULT_SETTINGS.provider;
+  if (s.apiKey && !keys[active]) keys[active] = s.apiKey;
+  return keys;
+}
+
+/**
+ * Saves settings. Typing a key files it under the provider; switching provider without a key brings
+ * back that provider's saved key (or none). `moreKeys` files extra keys, such as unsaved drafts.
+ */
+export async function saveSettings(patch: Partial<Settings>, moreKeys: Record<string, string> = {}): Promise<Settings> {
+  const current = await loadSettings();
+  const keys = await loadApiKeys();
+  const next: Settings = { ...current, ...patch };
+  for (const [prov, k] of Object.entries(moreKeys)) if (k.trim()) keys[prov] = k.trim();
+  if (patch.apiKey !== undefined) {
+    if (patch.apiKey.trim()) keys[next.provider] = patch.apiKey.trim();
+    else delete keys[next.provider];
+  } else if (patch.provider !== undefined && patch.provider !== current.provider) {
+    next.apiKey = keys[next.provider] ?? "";
+  }
+  await chrome.storage.local.set({ [SETTINGS_KEY]: next, [KEYS_KEY]: keys });
   return next;
 }
 

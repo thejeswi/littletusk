@@ -1,7 +1,7 @@
 import { type Language, type Mode, type Settings } from "../shared/protocol";
 import { PROVIDERS, modelsFor, providerInfo } from "../shared/providers";
 import { keyMismatch } from "../shared/key-hint";
-import { decodeSetupConfig, encodeSetupConfig, loadSettings, saveSettings, type SetupConfig } from "../shared/settings";
+import { decodeSetupConfig, encodeSetupConfig, loadApiKeys, loadSettings, saveSettings, type SetupConfig } from "../shared/settings";
 
 type UiLang = "en" | "de";
 const LINK_BASE = "https://thejeswi.github.io/littletusk/setup.html";
@@ -31,6 +31,7 @@ const S = {
     speak: "Read answers aloud",
     firstName: "The person's first name (optional)",
     keyMismatch: "But this key looks like a {key} key, and the provider is {selected}. Please choose {key} above, or paste a {selected} key.",
+    keySaved: "key saved",
     save: "Save", saved: "Saved.", saveBad: "Please check the key and the limit.",
     linkTitle: "Make a setup link",
     linkText: "Build a link that sets up Little Tusk on another computer. Send it by email.",
@@ -64,6 +65,7 @@ const S = {
     speak: "Antworten vorlesen",
     firstName: "Vorname der Person (optional)",
     keyMismatch: "Aber dieser Schlüssel sieht nach {key} aus, eingestellt ist {selected}. Bitte wählen Sie oben {key} oder fügen Sie einen {selected}-Schlüssel ein.",
+    keySaved: "Schlüssel gespeichert",
     save: "Speichern", saved: "Gespeichert.", saveBad: "Bitte prüfen Sie den Schlüssel und das Limit.",
     linkTitle: "Einrichtungslink erstellen",
     linkText: "Erstellt einen Link, der Little Tusk auf einem anderen Computer einrichtet. Schicken Sie ihn per E-Mail.",
@@ -180,12 +182,14 @@ function modelOptions(provider: string, selected: string): string {
 
 async function renderForm(): Promise<void> {
   const s = await loadSettings();
+  const saved = await loadApiKeys(); // one key per provider
+  const drafts: Record<string, string> = {}; // typed but not saved yet
   const tr = t();
   const opt = (v: string, label: string, sel: boolean) => `<option value="${v}"${sel ? " selected" : ""}>${esc(label)}</option>`;
   app.innerHTML = `<section id="form"><h2>${tr.formTitle}</h2>
-    <label class="field">${tr.provider}<select id="provider">${PROVIDERS.map((p) => opt(p.id, p.label, p.id === s.provider)).join("")}</select></label>
+    <label class="field">${tr.provider}<select id="provider">${PROVIDERS.map((p) => opt(p.id, p.label + (saved[p.id] ? ` ✓ ${tr.keySaved}` : ""), p.id === s.provider)).join("")}</select></label>
     <div class="field"><label for="key" style="font-weight:600">${tr.key}</label>
-      <div class="keyrow"><input id="key" type="password" autocomplete="off" spellcheck="false" value="${esc(s.apiKey)}"><button type="button" id="keyToggle" class="secondary">${tr.show}</button></div>
+      <div class="keyrow"><input id="key" type="password" autocomplete="off" spellcheck="false" value="${esc(saved[s.provider] ?? s.apiKey)}"><button type="button" id="keyToggle" class="secondary">${tr.show}</button></div>
       <small><a id="keyHelp" href="#" target="_blank" rel="noreferrer">${tr.getKey}</a></small></div>
     <label class="field">${tr.everyday}<select id="model"></select></label>
     <label class="field">${tr.strong}<select id="strongModel"></select></label>
@@ -208,9 +212,15 @@ async function renderForm(): Promise<void> {
     ($("keyHelp") as HTMLAnchorElement).href = providerInfo(provider.value).keyHelpUrl;
   };
   fillModels(s.model, s.strongModel);
+  let shown = provider.value; // the provider whose key is in the key box
   provider.onchange = () => {
     const info = providerInfo(provider.value);
     fillModels(info.model, info.strongModel);
+    // Each provider has its own key: park what was typed for the last one, show this one's.
+    const box = $<HTMLInputElement>("key");
+    drafts[shown] = box.value.trim();
+    shown = provider.value;
+    box.value = drafts[shown] ?? saved[shown] ?? "";
   };
   $("keyToggle").onclick = () => {
     const k = $<HTMLInputElement>("key");
@@ -238,12 +248,19 @@ async function renderForm(): Promise<void> {
     const msg = $("saveMsg");
     const c = read();
     if (!c) { msg.className = "err"; msg.textContent = t().saveBad; return; }
+    drafts[shown] = c.apiKey;
+    const others = Object.fromEntries(Object.entries(drafts).filter(([prov, k]) => prov !== c.provider && k && k !== saved[prov]));
     await saveSettings({
       provider: c.provider, apiKey: c.apiKey, model: c.model!, strongModel: c.strongModel!,
       language: c.language, mode: c.mode, monthlyLimit: c.monthlyLimit, currency: c.currency,
       speakAnswers: $<HTMLInputElement>("speak").checked, setupDone: true,
       ...(c.name !== undefined ? { name: c.name } : { name: "" }),
-    } as Partial<Settings>);
+    } as Partial<Settings>, others);
+    Object.assign(saved, others, c.apiKey ? { [c.provider]: c.apiKey } : {});
+    for (const o of Array.from($<HTMLSelectElement>("provider").options)) {
+      const label = providerInfo(o.value).label;
+      o.textContent = label + (saved[o.value] ? ` ✓ ${t().keySaved}` : "");
+    }
     const other = keyMismatch(c.provider, c.apiKey);
     if (other) {
       msg.className = "err";

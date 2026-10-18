@@ -173,6 +173,11 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   chatSettings.append(h("span", "", { "aria-hidden": "true" }, "⚙️"), chatSettingsTxt);
   label(chatSettingsTxt, "settings");
   chatSettings.addEventListener("click", () => setPanel("settings"));
+  const chatNew = h("button", "head-btn", { type: "button" });
+  const chatNewTxt = h("span");
+  chatNew.append(h("span", "", { "aria-hidden": "true" }, "🗑️"), chatNewTxt);
+  label(chatNewTxt, "newChat");
+  chatNew.addEventListener("click", () => { ctrl.clear(); hideBubble(); cb.onNewTopic(); });
   label(chatClose, "close", "aria-label");
   chatClose.addEventListener("click", () => setPanel(null));
   const list = h("div", "list", { "aria-live": "polite" });
@@ -186,7 +191,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   bind(() => micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart")));
   const foot = h("div", "foot");
   chatEl.append(
-    h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatSettings, chatClose)),
+    h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatNew, chatSettings), chatClose),
     list,
     h("div", "compose", undefined, composeFrame, ...(FEATURES.speechInput ? [micBtn] : [])),
     foot,
@@ -229,7 +234,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       h("label", "f", undefined, langLabelTxt, langSel),
       h("div", "modes", { role: "radiogroup" }, modeLabelTxt, ...modeCards),
       h("label", "toggle", undefined, speakChk, speakTxt),
-      act("newTopic", () => { setPanel(null); cb.onNewTopic(); }),
+      act("newTopic", () => { setPanel("chat"); ctrl.clear(); hideBubble(); cb.onNewTopic(); }),
       act("hideSite", () => tuckAndHide("site")),
       act("hideHour", () => tuckAndHide("hour")),
       act("familySettings", () => { setPanel(null); cb.onOpenFamilySettings(); }),

@@ -40,8 +40,10 @@ describe("overlay", () => {
     const settings = () => root.querySelectorAll<HTMLElement>(".panel")[1];
     q<HTMLButtonElement>("button.tusk").click();
     expect(chat().hidden).toBe(false);
-    expect(q(".head-btn").textContent).toContain("Settings");
-    q<HTMLButtonElement>(".head-btn").click();
+    const headBtn = (label: string) => [...root.querySelectorAll<HTMLButtonElement>(".head-btn")].find((b) => b.textContent!.includes(label))!;
+    expect(headBtn("New chat")).toBeTruthy();
+    expect(headBtn("Settings")).toBeTruthy();
+    headBtn("Settings").click();
     expect(settings().hidden).toBe(false);
     expect(chat().hidden).toBe(true);
     settings().querySelector<HTMLButtonElement>(".head .x")!.click();
@@ -82,7 +84,7 @@ describe("overlay", () => {
     sel.value = "de";
     sel.dispatchEvent(new Event("change"));
     expect(cb.onSettingsChange).toHaveBeenCalledWith({ language: "de" });
-    expect(q(".head-btn").textContent).toContain("Einstellungen");
+    expect([...root.querySelectorAll(".head-btn")].map((b) => b.textContent).join(" ")).toContain("Einstellungen");
   });
 
   it("points, shows bubble and clears", () => {
