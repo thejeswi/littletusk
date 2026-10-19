@@ -432,11 +432,26 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   composeFrame.addEventListener("load", () => {
     postCompose();
     composeReady = false;
+    composeHeight = 0; // a reloaded frame measures itself again
     try { composeFrame.contentWindow?.postMessage({ __littletusk: "speech-ping" }, "*"); } catch { /* not ready */ }
   });
+  // The typing frame measures itself and tells us, so the chat has no dead space under the send bar:
+  // the frame is exactly as tall as the text box, the hint (or its absence) and the download bar.
+  let composeHeight = 0;
+  function setComposeHeight(height: number) {
+    const px = clamp(Math.round(height), 44, 260);
+    if (px === composeHeight) return;
+    composeHeight = px;
+    composeFrame.style.height = `${px}px`;
+    layout();
+  }
   // The composing iframe hosts the microphone; wait until its script is ready, then deliver queued commands.
   window.addEventListener("message", (e) => {
-    const m = e.data as { __littletusk?: string; op?: "start" | "stop" } | undefined;
+    const m = e.data as { __littletusk?: string; op?: "start" | "stop"; height?: number } | undefined;
+    if (m?.__littletusk === "compose-height") {
+      if (typeof m.height === "number") setComposeHeight(m.height);
+      return;
+    }
     if (m?.__littletusk === "mic-request") {
       // The composing iframe asks for the microphone; this script knows the tab it belongs to.
       if (m.op === "start" && !listening) toggleMic();

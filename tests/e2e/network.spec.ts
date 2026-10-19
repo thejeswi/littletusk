@@ -49,7 +49,7 @@ function tsFiles(dir: string): string[] {
 /** Every URL literal in src, with the reason it may be there. */
 const URL_ALLOW: [RegExp, string][] = [
   [/^http:\/\/www\.w3\.org\/2000\/svg$/, "SVG namespace, not a request"],
-  [/^https:\/\/thejeswi\.github\.io\/littletusk\/setup\.html/, "the family's setup-link page (a link the family opens; the page is static)"],
+  [/^https:\/\/thejeswi\.github\.io\/littletusk\/(setup|voices)\.html/, "the project's static pages: the family's setup link and the voices help page (links a person opens; the pages are static)"],
   [/^https:\/\/(console\.anthropic\.com|platform\.openai\.com|aistudio\.google\.com|console\.mistral\.ai|openrouter\.ai|platform\.deepseek\.com)\//, "key help link shown to the family (src/shared/providers.ts), opened by a click only"],
 ];
 test("B. source has no unexplained URL and no fetch to a literal URL", () => {

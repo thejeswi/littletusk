@@ -62,6 +62,17 @@ function announceReady(): void {
   try { window.parent.postMessage({ __littletusk: "speech-ready" }, "*"); } catch { /* top level */ }
 }
 
+// The chat gives this frame exactly the height its content needs: the text box, the hint when it is
+// shown, and the model download bar. Without this the frame keeps a fixed height and leaves an empty
+// strip under the send bar.
+const wrap = document.getElementById("wrap") as HTMLElement;
+function reportHeight(): void {
+  const height = Math.ceil(wrap.getBoundingClientRect().height);
+  try { window.parent.postMessage({ __littletusk: "compose-height", height }, "*"); } catch { /* top level */ }
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(reportHeight).observe(wrap);
+else window.addEventListener("resize", reportHeight);
+
 function applyLanguage(next: Language): void {
   lang = next;
   document.documentElement.lang = next;
@@ -217,4 +228,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
 void loadLanguage();
 if (!FEATURES.speechInput) { micBtn.hidden = true; hint.hidden = true; }
 announceReady();
+reportHeight();
 document.body.dataset.ready = "1";
