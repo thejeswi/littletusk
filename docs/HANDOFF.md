@@ -1,5 +1,7 @@
 # Handoff: speech input, voice check and Tusk's moods (work in progress)
 
+> **Status (2026-10-19):** finished. Speech is on, Tusk's moods are in, and the full suites pass. Merged to `main` and released as **v0.2.0**; this file stays as the record of the work.
+
 Branch `wip/speech-and-moods`, 2026-10-19. `main` is stable and released (v0.1.0). This branch holds
 unfinished work, stopped mid-way to continue on another machine. Typecheck passed at the stop; the
 test suites were NOT run on this branch.
