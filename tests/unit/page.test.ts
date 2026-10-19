@@ -45,12 +45,13 @@ describe("snapshot", () => {
     expect(snap.elements.find((e) => e.name === "city")).toMatchObject({ value: "Musterstadt" });
   });
 
+  // 2300 elements over jsdom's slow getComputedStyle take ~13s on a slow box (CI is faster).
   it("bounds elements and text", () => {
     load(`<main>${"<p>wort </p>".repeat(2000)}${"<button>b</button>".repeat(300)}</main>`);
     const s = tools().snapshot();
     expect(s.elements.length).toBeLessThanOrEqual(150);
     expect(s.text.length).toBeLessThanOrEqual(3000);
-  });
+  }, 30000);
 });
 
 describe("safety words", () => {
