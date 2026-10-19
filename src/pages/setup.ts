@@ -33,6 +33,7 @@ const S = {
     listeningTitle: "Listening",
     listeningOnDevice: "Listening happens on this computer. Nothing leaves it.",
     listenOnline: "Allow the browser's online listener as a backup. The voice is sent to Google.",
+    talkToTusk: "Let my child talk to Tusk (off by default; the microphone badge under Tusk)",
     readAloudTitle: "Read answers aloud",
     testVoice: "🔊 Test voice",
     voicesTitle: "Voices on this computer",
@@ -86,6 +87,7 @@ const S = {
     listeningTitle: "Zuhören",
     listeningOnDevice: "Das Zuhören geschieht auf diesem Computer. Nichts verlässt ihn.",
     listenOnline: "Den Online-Zuhörer des Browsers als Ersatz erlauben. Die Stimme wird an Google gesendet.",
+    talkToTusk: "Mein Kind darf mit Tusk sprechen (standardmäßig aus; der Mikrofon-Knopf unter Tusk)",
     readAloudTitle: "Antworten vorlesen",
     testVoice: "🔊 Stimme testen",
     voicesTitle: "Stimmen auf diesem Computer",
@@ -309,6 +311,7 @@ async function renderForm(): Promise<void> {
       <legend>${tr.listeningTitle}</legend>
       <p class="hint">${tr.listeningOnDevice}</p>
       <label class="check"><input id="listenOnline" type="checkbox"${s.listenOnline ? " checked" : ""}>${tr.listenOnline}</label>
+      <label class="check"><input id="talkToTusk" type="checkbox"${s.talkToTusk ? " checked" : ""}>${tr.talkToTusk}</label>
       <h3>${tr.readAloudTitle}</h3>
       <div class="buttons"><button type="button" id="testVoice" class="secondary">${tr.testVoice}</button></div>
       <p id="voiceOut" role="status"></p>
@@ -376,6 +379,7 @@ async function renderForm(): Promise<void> {
       provider: c.provider, apiKey: c.apiKey, model: c.model!, strongModel: c.strongModel!,
       language: c.language, mode: c.mode, monthlyLimit: c.monthlyLimit, currency: c.currency,
       speakAnswers: $<HTMLInputElement>("speak").checked, listenOnline: $<HTMLInputElement>("listenOnline").checked,
+      talkToTusk: $<HTMLInputElement>("talkToTusk").checked,
       packPolicy: "auto", setupDone: true,
       ...(c.name !== undefined ? { name: c.name } : { name: "" }),
     } as Partial<Settings>, others);

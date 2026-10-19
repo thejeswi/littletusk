@@ -245,7 +245,16 @@ test("11 family settings page", async ({ context, extensionId, tusk }) => {
   await noSideScroll(page);
   await mkdir(out, { recursive: true });
   const path = join(out, "11-family-settings.png");
-  await page.screenshot({ path, fullPage: true });
+  // The settings themselves (with the header above them), not the whole page: the setup-link and
+  // microphone sections have their own screenshots, and a full page is over the size limit.
+  await expect(page.locator("#voiceList div").first()).toBeVisible(); // the voice list arrives from the service worker
+  const height = await page.evaluate(() => {
+    const r = (document.querySelector("#form") as HTMLElement).getBoundingClientRect();
+    return Math.ceil(r.top + window.scrollY + r.height + 16);
+  });
+  await page.setViewportSize({ width: 760, height }); // the settings fit in one screen: no clip, nothing cut off
+  await page.waitForTimeout(100);
+  await page.screenshot({ path });
   expect((await stat(path)).size).toBeLessThan(MAX_BYTES);
 });
 

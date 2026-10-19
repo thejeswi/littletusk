@@ -23,7 +23,6 @@ export interface ConversationState {
   you?: string; // what the person said, as heard
   tusk?: string; // Tusk's answer, as the captions show it
   progress?: string; // a percentage while the listening pack downloads
-  noVoice?: boolean; // captions only: this computer cannot read aloud in this language
 }
 
 export type Mode = "show" | "look-after"; // "Show me how" | "Look after me"
@@ -42,8 +41,11 @@ export interface Settings {
   listenOnline: boolean;
   /** B3: download a missing listening pack on first use, with progress. */
   packPolicy: "auto";
-  /** The one-time "this computer has no voice" note has been shown. */
-  noVoiceNoticed: boolean;
+  /**
+   * Family only: a spoken conversation (talk to Tusk). Off until a grown-up turns it on, so the badge
+   * under Tusk does not invite a child into a microphone by itself.
+   */
+  talkToTusk: boolean;
   /** hostname -> epoch ms until which Tusk stays tucked away on that site (Infinity-like: 8.64e15) */
   tuckedSites: Record<string, number>;
   /** epoch ms until which Tusk is tucked away everywhere */
@@ -65,7 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   speakAnswers: false,
   listenOnline: false,
   packPolicy: "auto",
-  noVoiceNoticed: false,
+  talkToTusk: false,
   tuckedSites: {},
   tuckedUntil: 0,
   setupDone: false,
@@ -180,7 +182,6 @@ export type ToAgent =
 export type RelayedToAgent =
   | (ToAgent & { relayed: true })
   | { to: "agent"; type: "speak-ended"; reqId: string; relayed: true } // the voice finished (or stopped)
-  | { to: "agent"; type: "no-voice"; lang: Language; relayed: true }; // no voice exists for that language
 
 // Agent -> service worker
 export type FromAgent =
@@ -190,7 +191,6 @@ export type FromAgent =
   | { to: "sw"; type: "speak"; text: string; lang: Language; reqId?: string }
   | { to: "sw"; type: "mic-level"; level: number; listening: boolean; phase?: MicPhase; progress?: string; text?: string } // live words for the chat box
   | { to: "sw"; type: "conversation-state"; state: ConversationState | null }
-  | { to: "sw"; type: "no-voice-noticed" } // remember that the one-time "no voice" note was shown
   | { to: "sw"; type: "speech-host"; tabId?: number; cmd: SpeechHostCommand } // tell the composing iframe to listen
   | { to: "sw"; type: "open-mic-permission" } // offscreen pages cannot ask for the mic: open a small window that can
   | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string }

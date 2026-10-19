@@ -16,7 +16,7 @@ Little Tusk is a patient little helper for the web. It is made for seniors, and 
 
 A small baby elephant called Tusk waits in the corner of every page. When you get stuck on something silly, such as a popup that will not close or a cookie banner that covers the page, Tusk walks over to the right thing, points at it, and explains in plain words what to do. If you want, it does the clicking for you.
 
-You can also talk to Tusk. Press the microphone in the chat and your words appear in the text box; you check them and press Send, so nothing goes out by itself. Or press the round microphone badge on Tusk for a hands-free conversation, like a phone call: Tusk listens, answers aloud, shows the words as captions and then listens again. Speech is understood on your computer by the browser's own listener, with Tusk's open Whisper model as a fallback. Only a family member can allow the browser's online listener as a backup, in Family settings.
+You can also talk to Tusk. Press the microphone in the chat and your words appear in the text box; you check them and press Send, so nothing goes out by itself. Or ask your family to turn on the round microphone badge under Tusk (Family settings, off by default) for a hands-free conversation, like a phone call: Tusk listens, answers aloud, shows the words as captions and then listens again. Speech is understood on your computer by the browser's own listener, with Tusk's open Whisper model as a fallback. Only a family member can allow the browser's online listener as a backup, in Family settings.
 
 Two ways to use it:
 - Show me how: Tusk stays quiet until you click it. Then it points, explains and waits for you. If you get stuck twice on the same step, it offers to do it for you.
@@ -96,7 +96,7 @@ Tick all three certifications:
 4. Set the language to English and save. Close settings.
 5. Type "How do I close this popup?" or "What is on this page?" in the chat. Tusk answers and points at the thing it means.
 6. Without a key, Tusk only says "Ask your family to set me up." That is expected.
-7. Speech (optional, needs a microphone): click the microphone in the chat, speak, and the words appear in the text box; press the round badge on Tusk for a hands-free conversation with captions. The first use of a language may download the browser's listening pack. In Family settings, the online listener is off by default and only the family can allow it.
+7. Speech (optional, needs a microphone): click the microphone in the chat, speak, and the words appear in the text box; ask your family to switch on the badge under Tusk (Family settings, off by default) for a hands-free conversation with captions. The first use of a language may download the browser's listening pack. In Family settings, the online listener is off by default and only the family can allow it.
 
 Fill in the real key in the dashboard's test instructions field only. Never commit it to this repository. Revoke the key after the review.
 
@@ -109,7 +109,7 @@ The owner decides. This is a free, open-source hobby project with no business be
 - [x] The production manifest lists only storage, offscreen, scripting and tts, plus access to all sites. The `tabs` permission and the test-only localhost patterns are gone (checked by `npm run check:store` and the manifest unit tests). Minimum Chrome version is 116.
 - [ ] Version number in manifest.json is the one being uploaded.
 - [ ] The release zip is built with `npm run build` and loads cleanly via Load unpacked.
-- [ ] Speech is on: the chat microphone, the badge on Tusk, Test voice and the family's online-listener checkbox appear; the privacy policy and the description above match.
+- [ ] Speech is on: the chat microphone, Test voice and the family's online-listener checkbox appear, and the badge under Tusk appears once a family member turns talking on; the privacy policy and the description above match.
 - [ ] `npm run check-clean` passes.
 - [ ] The privacy policy is live at the URL above (merge and wait for GitHub Pages).
 - [ ] Five screenshots (1280x800) and the small promo tile (440x280) are uploaded from docs/store/assets.

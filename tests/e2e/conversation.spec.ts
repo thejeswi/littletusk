@@ -5,7 +5,7 @@ test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:spee
 // E1 + F1: the microphone badge starts a hands-free conversation. The scripted microphone in the test
 // build speaks the lines in "__speech_queue" and stops by itself, like a person pausing.
 test("@speech the microphone badge starts a hands-free conversation with captions", async ({ context, demoUrl, tusk }) => {
-  await tusk.configure();
+  await tusk.configure({ talkToTusk: true }); // the family turned talking on; otherwise there is no badge
   await tusk.set("__speech_fake", true);
   await tusk.set("__speech_queue", ["x", "where do I log in"]); // the first is junk and must be dropped
   await tusk.set("__speech_text", "");
@@ -39,8 +39,20 @@ test("@speech the microphone badge starts a hands-free conversation with caption
   await expect(badge).not.toHaveClass(/on/);
 });
 
+test("@speech the talk badge stays away until a grown-up turns talking on", async ({ context, demoUrl, tusk }) => {
+  await tusk.configure(); // talkToTusk is off by default
+  const page = await context.newPage();
+  await page.goto(`${demoUrl}/blank.html`);
+  await expect(page.locator("button.tusk")).toBeVisible();
+  await expect(page.locator("button.talk")).toBeHidden();
+  // The family settings turn it on: the next page load shows the badge under Tusk.
+  await tusk.configure({ talkToTusk: true });
+  await page.reload();
+  await expect(page.locator("button.talk")).toBeVisible();
+});
+
 test("@speech New chat ends a spoken conversation", async ({ context, demoUrl, tusk }) => {
-  await tusk.configure();
+  await tusk.configure({ talkToTusk: true });
   await tusk.set("__speech_fake", true);
   await tusk.set("__speech_queue", []);
   await tusk.set("__speech_text", "");

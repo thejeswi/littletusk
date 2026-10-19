@@ -1,5 +1,5 @@
 // Content script: the overlay (Tusk) and the page tools, wired to the service worker.
-import type { ChatView, FromContent, OverlayInfo, PageCommand, PageResult, Settings, ToAgent, ToContent, VoiceTest } from "../shared/protocol";
+import type { ChatView, FromContent, Language, OverlayInfo, PageCommand, PageResult, Settings, ToAgent, ToContent, VoiceList, VoiceTest } from "../shared/protocol";
 import { DEFAULT_SETTINGS } from "../shared/protocol";
 import { publicSettings } from "../shared/settings";
 import { t, type I18nKey } from "../shared/i18n";
@@ -26,6 +26,7 @@ function main() {
   let stopWatchWarnings: (() => void) | null = null;
   let tuckTimer: ReturnType<typeof setTimeout> | undefined;
   const offered = new Map<string, OverlayInfo>();
+  let voicesFor: Language | null = null; // the language the voice check was made for
 
   const send = <T = unknown>(msg: ToAgent | FromContent): Promise<T | undefined> => {
     try {
@@ -122,6 +123,13 @@ function main() {
 
   // ---------- mount / unmount ----------
 
+  /** Asks the service worker which voices this computer has: with none, Tusk hides Read aloud and Test voice. */
+  async function applyVoices(lang: Language): Promise<void> {
+    const list = await send<VoiceList>({ to: "sw", type: "list-voices" });
+    if (!list) return; // no answer: leave the switches as they are
+    ctrl?.setVoiceAvailable(!!list[lang]);
+  }
+
   function mount(s: PublicSettings) {
     ctrl = mountOverlay(
       {
@@ -153,6 +161,7 @@ function main() {
     stopWatching();
     ctrl?.destroy();
     ctrl = null;
+    voicesFor = null; // a later mount asks again (the family may have added a voice meanwhile)
   }
 
   function apply(s: PublicSettings) {
@@ -161,6 +170,7 @@ function main() {
     if (visible(s)) {
       if (!ctrl) mount(s);
       else ctrl.setSettings(s);
+      if (voicesFor !== s.language) { voicesFor = s.language; void applyVoices(s.language); }
       if (!isPlayground && s.mode === "look-after") startWatching();
       else stopWatching();
     } else {

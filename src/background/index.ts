@@ -149,16 +149,13 @@ async function speechState(on: boolean): Promise<void> {
   await toAllTabs({ to: "content", type: "speaking", on });
 }
 
-function tellAgent(msg: { type: "speak-ended"; reqId: string } | { type: "no-voice"; lang: Language }): void {
+function tellAgent(msg: { type: "speak-ended"; reqId: string }): void {
   void chrome.runtime.sendMessage({ ...msg, to: "agent", relayed: true }).catch(() => undefined);
 }
 
 async function speak(text: string, lang: Language, reqId?: string): Promise<VoiceTest> {
   const voice = await pickVoice(lang);
-  if (!voice) {
-    tellAgent({ type: "no-voice", lang });
-    return { none: true };
-  }
+  if (!voice) return { none: true }; // no voice here: the caller stays quiet about it
   let ended = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const done = () => {
@@ -236,7 +233,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 type SwMessage = FromAgent | FromContent;
 
 /** Only the offscreen document may use these. */
-const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "conversation-state", "no-voice-noticed", "speech-host", "open-url", "get-settings", "e2e-get", "e2e-set"]);
+const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "conversation-state", "speech-host", "open-url", "get-settings", "e2e-get", "e2e-set"]);
 
 function fromOffscreen(sender: chrome.runtime.MessageSender): boolean {
   return !sender.tab && sender.url === OFFSCREEN_URL;
@@ -271,8 +268,6 @@ async function handleSw(msg: SwMessage, sender: chrome.runtime.MessageSender): P
       if (msg.tabId) return void (await chrome.tabs.sendMessage(msg.tabId, out).catch(() => undefined));
       return void (await toAllTabs(out));
     }
-    case "no-voice-noticed":
-      return void (await saveSettings({ noVoiceNoticed: true }));
     case "test-voice":
       return await testVoice(msg.lang);
     case "list-voices":

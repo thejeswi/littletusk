@@ -50,7 +50,6 @@ interface ConvState {
   you?: string;
   tusk?: string;
   progress?: string;
-  noVoice?: boolean;
   lastHeard: number;
   busy: boolean; // a heard sentence is being answered
   watchdog?: ReturnType<typeof setInterval>;
@@ -327,8 +326,6 @@ export class TuskAgent {
         return void this.endConversation();
       case "speak-ended":
         return void (() => { const done = this.speakWaiters.get(msg.reqId); this.speakWaiters.delete(msg.reqId); done?.(); })();
-      case "no-voice":
-        return void (await this.noteNoVoice(msg.lang));
       case "speech-event":
         return void this.onSpeechEvent(msg.event);
       case "overlay-help": {
@@ -545,7 +542,7 @@ export class TuskAgent {
 
   private conversationState(): ConversationState | null {
     if (!this.conv.active) return null;
-    return { on: true, phase: this.conv.phase, you: this.conv.you, tusk: this.conv.tusk, progress: this.conv.progress, noVoice: this.conv.noVoice };
+    return { on: true, phase: this.conv.phase, you: this.conv.you, tusk: this.conv.tusk, progress: this.conv.progress };
   }
 
   private broadcastConversation(): void {
@@ -638,7 +635,7 @@ export class TuskAgent {
     return "";
   }
 
-  /** Says one answer aloud in a conversation. With no voice, captions stay long enough to read. */
+  /** Says one answer aloud in a conversation. Without a voice nothing is said, and the captions stay long enough to read. */
   private async speakConversation(text: string): Promise<void> {
     const lang = this.settings.language;
     const reqId = crypto.randomUUID();
@@ -648,22 +645,12 @@ export class TuskAgent {
     });
     const r = await sendSw<VoiceTest>({ to: "sw", type: "speak", text, lang, reqId });
     if (r && "none" in r) {
-      this.conv.noVoice = true;
-      this.broadcastConversation();
-      await this.noteNoVoice(lang);
-      // No voice: let the person read the captions before listening again.
+      // No voice for this language: no note about it either, because Tusk's settings hide Read aloud
+      // when a computer has no voice. Let the person read the captions before listening again.
       await sleep(Math.min(6000, 1500 + text.length * 40));
       this.speakWaiters.delete(reqId);
       return;
     }
     await ended;
-  }
-
-  /** The one-time note when this computer has no voice for the language. */
-  private async noteNoVoice(lang: Language): Promise<void> {
-    if (this.settings.noVoiceNoticed) return;
-    this.settings = { ...this.settings, noVoiceNoticed: true };
-    await sendSw({ to: "sw", type: "no-voice-noticed" });
-    await this.notice(t(lang, "noVoice", { language: LANGUAGE_NAMES[lang] ?? lang }));
   }
 }

@@ -74,3 +74,15 @@ test("family settings: the online listener is the family's choice, and voices ar
   await expect(voices).toContainText("English (India)");
   await expect(page.locator("#testVoice")).toBeVisible();
 });
+
+test("family settings: talking to Tusk is a grown-up's choice, off by default", async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/pages/setup.html`);
+  await page.locator("#key").fill("sk-ant-form-key-9999");
+  await expect(page.locator("#talkToTusk")).not.toBeChecked();
+  await page.locator("#talkToTusk").check();
+  await page.locator("#save").click();
+  await expect(page.locator("#saveMsg")).toHaveClass("ok");
+  const stored = (await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings)) as { talkToTusk?: boolean };
+  expect(stored.talkToTusk).toBe(true);
+});

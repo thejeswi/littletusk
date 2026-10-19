@@ -114,12 +114,22 @@ describe("overlay", () => {
     expect(cb.onAnswer).toHaveBeenCalledWith("o", false);
   });
 
-  it("shows the listening bubble", () => {
-    ctrl.setMic(0.5, true);
-    expect(q<HTMLElement>(".listen").hidden).toBe(false);
-    expect(q("button.tusk").classList.contains("m-listening")).toBe(true);
-    ctrl.setMic(0, false);
-    expect(q<HTMLElement>(".listen").hidden).toBe(true);
+  it("starts listening in the chat's typing box, and Tusk looks listening", () => {
+    vi.useFakeTimers();
+    try {
+      ctrl.setMic(0.5, true);
+      // A1: the words and hints live in the chat's typing box, so the chat opens and the floating
+      // listening bubble (for listening started with no chat open) stays out of the way.
+      expect(root.querySelectorAll<HTMLElement>(".panel")[0].hidden).toBe(false);
+      expect(q<HTMLElement>(".listen").hidden).toBe(true);
+      vi.advanceTimersByTime(1900); // opening the chat greets first (a one-shot hello mood)
+      expect(q("button.tusk").classList.contains("m-listening")).toBe(true);
+      ctrl.setMic(0, false);
+      expect(q<HTMLElement>(".listen").hidden).toBe(true);
+      expect(q("button.tusk").classList.contains("m-idle")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("changes Tusk's mood, and a one-shot mood falls back to idle", () => {
@@ -178,5 +188,31 @@ describe("overlay", () => {
     expect(q<HTMLElement>("button.talk").hidden).toBe(true);
     expect(q(".compose .mic")).toBeNull();
     expect(q(".compose iframe").getAttribute("src")).toBeTruthy();
+  });
+
+  it("offers Read aloud and Test voice only when this computer really has a voice", () => {
+    q<HTMLButtonElement>("button.tusk").click();
+    q<HTMLButtonElement>(".head-btn").click(); // Settings ("New chat" comes first in the header)
+    const row = () => q<HTMLElement>(".speak-row");
+    expect(row().hidden).toBe(false); // not checked yet: shown
+    ctrl.setVoiceAvailable(true);
+    expect(row().hidden).toBe(false);
+    ctrl.setVoiceAvailable(null); // no answer from the service worker: shown
+    expect(row().hidden).toBe(false);
+    ctrl.setVoiceAvailable(false); // no voice for this language: the whole row goes
+    expect(row().hidden).toBe(true);
+    const line = q<HTMLElement>(".voice-line");
+    ctrl.setVoiceTest({ none: true });
+    expect(line.hidden).toBe(true); // and no "ask your family to add one" either
+    ctrl.setVoiceAvailable(true);
+    expect(row().hidden).toBe(false);
+  });
+
+  it("keeps the talk badge hidden in a build without speaking, whatever the family chose", () => {
+    // The visible case needs the speech build: tests/e2e/conversation.spec.ts turns it on in the family settings.
+    const badge = () => q<HTMLButtonElement>("button.talk");
+    expect(badge().hidden).toBe(true); // the default too: talkToTusk starts off
+    ctrl.setSettings({ ...settings, talkToTusk: true });
+    expect(badge().hidden).toBe(true); // __SPEECH__ is off here, so no badge
   });
 });

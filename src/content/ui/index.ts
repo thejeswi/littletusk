@@ -38,6 +38,8 @@ export interface OverlayController {
   setSpeaking(on: boolean): void;
   /** The answer to Test voice (null: none). */
   setVoiceTest(result: VoiceTest | null): void;
+  /** Whether this computer has a voice for the language (null: not known yet). No voice hides Read aloud. */
+  setVoiceAvailable(available: boolean | null): void;
   say(text: string): void;
   pointAt(el: Element, say: string): void;
   spotlight(el: Element, say: string): void;
@@ -273,10 +275,15 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   );
 
   // The microphone badge on Tusk (E1): a small round badge with a big, unsteady-hands-friendly hit area.
+  // It is there only when a grown-up turned the spoken conversation on in the family settings: a child is
+  // not invited into a microphone by default.
   const talkBtn = h("button", "talk", { type: "button" });
   const talkDot = h("span", "dot", { "aria-hidden": "true" }, "🎤");
   talkBtn.append(talkDot);
-  talkBtn.hidden = !FEATURES.speechInput;
+  function applyTalkBadge() {
+    talkBtn.hidden = !FEATURES.speechInput || !settings.talkToTusk;
+  }
+  applyTalkBadge();
   bind(() => talkBtn.setAttribute("aria-label", t(lang(), conversation?.on ? "stopTalking" : "speakWithTusk")));
   talkBtn.addEventListener("click", () => { if (conversation?.on) cb.onConversationStop(); else cb.onConversationStart(); });
 
@@ -322,13 +329,24 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     b.addEventListener("click", fn);
     return b;
   };
+  // Read aloud and Test voice only make sense when this computer really has a voice for the language
+  // (the content script asks the service worker once voicing is possible). With none, the row is gone:
+  // no switch to turn on, no test that can only say "no voice", no "ask your family to add one" either.
+  const speakRow = h("div", "speak-row", undefined, h("label", "toggle", undefined, speakChk, speakTxt), testVoiceBtn);
+  let voiceAvailable: boolean | null = null; // null: not asked yet, so nothing is hidden
+  function applyVoiceUi() {
+    const none = voiceAvailable === false;
+    speakRow.hidden = none;
+    if (none) { voiceLine.hidden = true; voiceLine.textContent = ""; }
+  }
+  applyVoiceUi();
   const tuckAndHide = (scope: "site" | "hour") => { setPanel(null); cb.onTuck(scope); host.style.display = "none"; };
   setEl.append(
     h("div", "head", undefined, setTitle, setClose),
     h("div", "set", undefined,
       h("label", "f", undefined, langLabelTxt, langSel),
       h("div", "modes", { role: "radiogroup" }, modeLabelTxt, ...modeCards),
-      h("div", "speak-row", undefined, h("label", "toggle", undefined, speakChk, speakTxt), testVoiceBtn),
+      speakRow,
       voiceLine,
       act("newTopic", () => { setPanel("chat"); ctrl.clear(); hideBubble(); cb.onNewTopic(); }),
       act("hideSite", () => tuckAndHide("site")),
@@ -355,6 +373,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   }
   function applySettings() {
     binds.forEach((f) => f());
+    applyTalkBadge();
     langSel.value = settings.language;
     speakChk.checked = settings.speakAnswers;
     voiceLine.hidden = true;
@@ -904,6 +923,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     },
     setSpeaking(on) { speakingOn = on; applyMood(); },
     setVoiceTest(result) {
+      if (voiceAvailable === false) return; // no voice here: nothing to test, no line to show
       if (!result) { voiceLine.hidden = true; return; }
       voiceLine.hidden = false;
       if ("none" in result) {
@@ -913,6 +933,11 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
         voiceLine.className = "voice-line ok";
         voiceLine.textContent = t(lang(), result.voice.online ? "voiceHeardOnline" : "voiceHeardLocal", { name: result.voice.name });
       }
+      layout();
+    },
+    setVoiceAvailable(available) {
+      voiceAvailable = available;
+      applyVoiceUi();
       layout();
     },
     say(text) { showBubble({ text, src: "say" }, 12000); },
