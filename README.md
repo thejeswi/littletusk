@@ -95,8 +95,8 @@ The built extension is not stored in the repository. A release is built from the
 
 ```bash
 # set "version" in manifest.json and package.json, commit, then:
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 The workflow (`.github/workflows/release.yml`) runs the type check and tests, builds from a clean checkout, checks that the build contains no personal paths or names, and attaches the zip to a GitHub Release. The tag has to match the version in `manifest.json`. Running the workflow by hand builds the same zip as a download without making a release.
@@ -123,8 +123,8 @@ Chrome
 ├── service worker: message router, starts the offscreen document, text to speech
 ├── offscreen document: the agent (pi-durable harness, pi-ai model providers)
 │     ├── worker: SQLite-WASM in the extension's private storage (the durable conversation)
-│     ├── browser speech: on-device recognizer first, Whisper in a worker as the fallback
-│     └── worker: Whisper in WebAssembly (speech to text)
+│     ├── composing frame (extension page): the microphone and the speech engine
+│     └── worker: browser on-device recognizer first, Whisper in WebAssembly as the fallback
 └── extension pages: family settings and the setup link landing page
 ```
 

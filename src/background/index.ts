@@ -1,7 +1,6 @@
 // Service worker: the message router. It keeps one offscreen document (the agent) alive, forwards messages
 // between content scripts and the agent, runs page commands in tabs, speaks with chrome.tts and watches settings.
 import type { ChatView, FromAgent, FromContent, Language, PageCommand, PageResult, Settings, ToAgent, ToContent, VoiceInfo, VoiceList, VoiceTest } from "../shared/protocol";
-import { FEATURES } from "../shared/features";
 import { isWebUrl } from "../shared/protocol";
 import { t } from "../shared/i18n";
 import { loadSettings, publicSettings, saveSettings } from "../shared/settings";
@@ -16,11 +15,10 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 let creating: Promise<void> | undefined;
 
-/** WORKERS always (SQLite and the agent run in workers); USER_MEDIA only when speaking to Tusk is on. */
+/** WORKERS: SQLite and the agent run in workers. The microphone is not used here: an offscreen
+ * document cannot get microphone permission, so the speech engine runs in the composing iframe. */
 export function offscreenReasons(): chrome.offscreen.Reason[] {
-  const reasons = ["WORKERS" as chrome.offscreen.Reason];
-  if (FEATURES.speechInput) reasons.push("USER_MEDIA" as chrome.offscreen.Reason);
-  return reasons;
+  return ["WORKERS" as chrome.offscreen.Reason];
 }
 
 export async function ensureOffscreen(): Promise<void> {
@@ -33,9 +31,7 @@ export async function ensureOffscreen(): Promise<void> {
       .createDocument({
         url: OFFSCREEN_PATH,
         reasons: offscreenReasons(),
-        justification: FEATURES.speechInput
-          ? "Runs Tusk's agent and its local database, and listens to the microphone when the person speaks."
-          : "Runs Tusk's agent and its local database in workers.",
+        justification: "Runs Tusk's agent and its local database in workers.",
       })
       .catch((e) => {
         // A concurrent creation (another wake-up of this worker) is fine.
@@ -240,7 +236,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 type SwMessage = FromAgent | FromContent;
 
 /** Only the offscreen document may use these. */
-const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "conversation-state", "no-voice-noticed", "open-url", "get-settings", "e2e-get", "e2e-set"]);
+const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "conversation-state", "no-voice-noticed", "speech-host", "open-url", "get-settings", "e2e-get", "e2e-set"]);
 
 function fromOffscreen(sender: chrome.runtime.MessageSender): boolean {
   return !sender.tab && sender.url === OFFSCREEN_URL;
@@ -269,6 +265,12 @@ async function handleSw(msg: SwMessage, sender: chrome.runtime.MessageSender): P
       return await speak(msg.text, msg.lang, msg.reqId);
     case "conversation-state":
       return void (await toAllTabs({ to: "content", type: "conversation", state: msg.state }));
+    case "speech-host": {
+      // The microphone lives in the composing iframe (an extension page), not in this offscreen document.
+      const out: ToContent = { to: "content", type: "speech-host", cmd: msg.cmd };
+      if (msg.tabId) return void (await chrome.tabs.sendMessage(msg.tabId, out).catch(() => undefined));
+      return void (await toAllTabs(out));
+    }
     case "no-voice-noticed":
       return void (await saveSettings({ noVoiceNoticed: true }));
     case "test-voice":

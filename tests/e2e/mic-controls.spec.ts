@@ -13,6 +13,12 @@ test("@speech chat microphone: live words, the two-line hints, and nothing sent 
   await page.locator("button.tusk").click();
   const box = page.frameLocator(".compose-frame");
   const mic = box.locator("#m");
+  // The speech engine runs in this frame (an extension page), so it must be allowed the microphone.
+  const allow = await page.evaluate(() => {
+    const root = (document.querySelector("[data-littletusk=overlay]") as HTMLElement).shadowRoot!;
+    return (root.querySelector(".compose-frame") as HTMLIFrameElement).getAttribute("allow");
+  });
+  expect(allow).toContain("microphone");
 
   await mic.click();
   await expect(box.locator("#hint")).toBeVisible();
