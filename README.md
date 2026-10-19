@@ -95,8 +95,8 @@ The built extension is not stored in the repository. A release is built from the
 
 ```bash
 # set "version" in manifest.json and package.json, commit, then:
-git tag v0.2.1
-git push origin v0.2.1
+git tag v0.2.2
+git push origin v0.2.2
 ```
 
 The workflow (`.github/workflows/release.yml`) runs the type check and tests, builds from a clean checkout, checks that the build contains no personal paths or names, and attaches the zip to a GitHub Release. The tag has to match the version in `manifest.json`. Running the workflow by hand builds the same zip as a download without making a release.

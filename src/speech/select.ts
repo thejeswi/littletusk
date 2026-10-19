@@ -37,6 +37,16 @@ interface Engine {
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** True in the composing iframe: the browser's on-device recognizer refuses cross-origin iframes,
+ * so Whisper runs there instead (its microphone works with the iframe's allow="microphone"). */
+export function inCrossOriginFrame(): boolean {
+  try {
+    return window.top !== window && !window.top?.location.href;
+  } catch {
+    return true;
+  }
+}
 const PACK_STATE_MS = 10_000; // the browser answers at once; do not leave the microphone hanging
 const PACK_INSTALL_MS = 180_000; // a slow download is fine, an endless one is not
 
@@ -91,6 +101,13 @@ export function createSpeechAuto(opts: AutoSpeechOptions) {
       }
     }
     const mine = token;
+    if (inCrossOriginFrame()) {
+      // Chrome: "Access denied from cross-origin iframes" for SpeechRecognition.install.
+      kind = "whisper";
+      engine = makeWhisper(mine);
+      await engine.start(lang);
+      return;
+    }
     if (recognizerCtor()) {
       const state = (await Promise.race([packState(lang), sleep(PACK_STATE_MS).then(() => "unavailable" as PackState)]));
       if (!active) return;
