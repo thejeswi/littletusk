@@ -893,7 +893,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       voiceLine.hidden = false;
       if ("none" in result) {
         voiceLine.className = "voice-line warn";
-        voiceLine.textContent = t(lang(), "voiceNone", { language: LANGUAGE_NAMES[lang()] ?? lang() });
+        voiceLine.textContent = `${t(lang(), "voiceNone", { language: LANGUAGE_NAMES[lang()] ?? lang() })}\n${t(lang(), "voiceHelp")}`;
       } else {
         voiceLine.className = "voice-line ok";
         voiceLine.textContent = t(lang(), result.voice.online ? "voiceHeardOnline" : "voiceHeardLocal", { name: result.voice.name });

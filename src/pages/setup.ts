@@ -36,6 +36,13 @@ const S = {
     readAloudTitle: "Read answers aloud",
     testVoice: "🔊 Test voice",
     voicesTitle: "Voices on this computer",
+    voiceHelp: "Missing a voice? Your family can add one in the computer's settings.",
+    voiceHelpLink: "How to add a voice",
+    prepareListen: "Prepare listening",
+    prepareHint: "Downloads Tusk's listening model once, so the first microphone use is quick.",
+    prepareProgress: "Getting ready… {pct}",
+    prepareDone: "Ready. The first listening will be quick.",
+    prepareFail: "Could not get the listening model. Tusk will try again when the microphone is used.",
     voiceHeardOnline: "Did you hear me? Voice: {name} (online).",
     voiceHeardLocal: "Did you hear me? Voice: {name} (on this computer).",
     voiceNone: "This computer has no voice for {language}.",
@@ -82,6 +89,13 @@ const S = {
     readAloudTitle: "Antworten vorlesen",
     testVoice: "🔊 Stimme testen",
     voicesTitle: "Stimmen auf diesem Computer",
+    voiceHelp: "Fehlt eine Stimme? Ihre Familie kann sie in den Einstellungen des Computers hinzufügen.",
+    voiceHelpLink: "So fügen Sie eine Stimme hinzu",
+    prepareListen: "Zuhören vorbereiten",
+    prepareHint: "Lädt Tusk's Hör-Modell einmal herunter, damit das erste Mikrofon schnell bereit ist.",
+    prepareProgress: "Ich mache mich bereit… {pct}",
+    prepareDone: "Fertig. Das erste Zuhören geht schnell.",
+    prepareFail: "Das Hör-Modell konnte nicht geladen werden. Tusk versucht es beim Mikrofon erneut.",
     voiceHeardOnline: "Haben Sie mich gehört? Stimme: {name} (online).",
     voiceHeardLocal: "Haben Sie mich gehört? Stimme: {name} (auf diesem Computer).",
     voiceNone: "Dieser Computer hat keine Stimme für {language}.",
@@ -218,6 +232,32 @@ function wireVoiceSettings(): void {
     }
   };
   $("testVoice").onclick = () => void say($<HTMLSelectElement>("language").value as Language);
+  $("prepListen").onclick = async () => {
+    const btn = $<HTMLButtonElement>("prepListen");
+    const msg = $("prepMsg");
+    btn.disabled = true;
+    msg.className = "";
+    msg.textContent = tr.prepareHint;
+    try {
+      const { createSpeech } = await import("../speech/index");
+      const speech = createSpeech({
+        wasmBase: chrome.runtime.getURL("wasm/"),
+        onLevel: () => undefined,
+        onState: (state, detail) => {
+          if (state === "loading") msg.textContent = tr.prepareProgress.replace("{pct}", detail ?? "…");
+          else if (state === "idle") { msg.className = "ok"; msg.textContent = tr.prepareDone; }
+          else if (state === "error") { msg.className = "err"; msg.textContent = tr.prepareFail; }
+        },
+      });
+      await speech.preload();
+      speech.dispose();
+    } catch {
+      msg.className = "err";
+      msg.textContent = tr.prepareFail;
+    } finally {
+      btn.disabled = false;
+    }
+  };
   void (async () => {
     try {
       const map = (await chrome.runtime.sendMessage({ to: "sw", type: "list-voices" })) as VoiceList | undefined;
@@ -273,6 +313,11 @@ async function renderForm(): Promise<void> {
       <div class="buttons"><button type="button" id="testVoice" class="secondary">${tr.testVoice}</button></div>
       <p id="voiceOut" role="status"></p>
       <div id="voiceList" class="hint"></div>
+      <p class="hint">${tr.voiceHelp} <a href="https://thejeswi.github.io/littletusk/voices.html" target="_blank" rel="noreferrer">${tr.voiceHelpLink}</a></p>
+      <h3>${tr.listeningTitle}</h3>
+      <p class="hint">${tr.prepareHint}</p>
+      <div class="buttons"><button type="button" id="prepListen" class="secondary">${tr.prepareListen}</button></div>
+      <p id="prepMsg" role="status"></p>
     </fieldset>
     <label class="field">${tr.firstName}<input id="name" type="text" maxlength="60" value="${esc((s as Settings & { name?: string }).name ?? "")}"></label>
     <div class="buttons"><button id="save">${tr.save}</button></div><p id="saveMsg" role="status"></p></section>

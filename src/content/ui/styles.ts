@@ -182,7 +182,7 @@ button.talk:focus-visible .dot{outline:3px solid #ffb703;outline-offset:3px}
 .toggle input{width:28px;height:28px;flex:none}
 .speak-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .speak-row .act{min-height:44px;padding:4px 14px;font-size:16px;border-radius:22px;border:2px solid #99bbbb;background:#fff;font-weight:600}
-.voice-line{margin:2px 0 6px;font-size:15px;line-height:1.35}
+.voice-line{margin:2px 0 6px;font-size:15px;line-height:1.35;white-space:pre-line}
 .voice-line.ok{color:#1a7f4b;font-weight:600}
 .voice-line.warn{color:#b42318;font-weight:600}
 .act{min-height:44px;border-radius:14px;border:2px solid #c3d0d8;background:#fff;font-size:16px;padding:8px 12px;text-align:left}

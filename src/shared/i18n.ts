@@ -101,6 +101,8 @@ const en = {
   voiceLocalTag: "on this computer",
   voicesTitle: "Voices on this computer",
   noVoice: "🔇 This computer has no voice for reading aloud in {language}. Ask your family to add one.",
+  voiceHelp: "Your family can add a voice in the computer's settings. Tusk still shows every answer as text.",
+  voiceHelpLink: "How to add a voice",
 } as const;
 
 export type I18nKey = keyof typeof en;
@@ -206,6 +208,8 @@ const de: Table = {
   voiceLocalTag: "auf diesem Computer",
   voicesTitle: "Stimmen auf diesem Computer",
   noVoice: "🔇 Dieser Computer hat keine Stimme zum Vorlesen auf {language}. Bitten Sie Ihre Familie, eine hinzuzufügen.",
+  voiceHelp: "Ihre Familie kann in den Einstellungen des Computers eine Stimme hinzufügen. Tusk zeigt jede Antwort weiterhin als Text.",
+  voiceHelpLink: "So fügen Sie eine Stimme hinzu",
 };
 
 const es: Table = {
@@ -308,6 +312,8 @@ const es: Table = {
   voiceLocalTag: "en este ordenador",
   voicesTitle: "Voces en este ordenador",
   noVoice: "🔇 Este ordenador no tiene voz para leer en voz alta en {language}. Pida a su familia que añada una.",
+  voiceHelp: "Su familia puede añadir una voz en los ajustes del ordenador. Tusk seguirá mostrando cada respuesta como texto.",
+  voiceHelpLink: "Cómo añadir una voz",
 };
 
 const enIN: Table = {

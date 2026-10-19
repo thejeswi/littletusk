@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Adding a voice for Little Tusk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <p><a href="index.html">&larr; Back to the Little Tusk home page</a></p>
+  <img class="tusk" src="tusk.svg" alt="Tusk, a baby elephant">
+  <h1>Adding a voice for Tusk</h1>
+  <p>Tusk reads its answers aloud with the voices that your browser and computer provide. It cannot install a voice by itself, and it never downloads one without the family asking. If there is no voice for the chosen language, Tusk says so once and shows every answer as text instead. Everything else keeps working.</p>
+
+  <section>
+    <h2>Check which voices exist</h2>
+    <ol>
+      <li>Click Tusk, then <em>Settings</em>, then <em>Family settings</em>.</li>
+      <li>Under <em>Read answers aloud</em>, look at the list of voices. Each language shows a voice name and whether it is online, or "no voice on this computer".</li>
+      <li>Press <em>🔊 Test voice</em> to hear the voice for the chosen language.</li>
+    </ol>
+    <p>An <strong>online</strong> voice comes from the browser maker's service, so the text of the answer is sent there. A voice <strong>on this computer</strong> works without sending the text anywhere.</p>
+  </section>
+
+  <section>
+    <h2>Windows 11</h2>
+    <ol>
+      <li>Open <em>Settings</em> &rarr; <em>Time &amp; language</em> &rarr; <em>Speech</em>.</li>
+      <li>Under <em>Voices</em>, choose <em>Add voices</em> and pick the language, for example English (United Kingdom) or Deutsch (Deutschland).</li>
+      <li>Wait for the download, then restart the browser and try <em>Test voice</em> again.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>macOS</h2>
+    <ol>
+      <li>Open <em>System Settings</em> &rarr; <em>Accessibility</em> &rarr; <em>Spoken Content</em>.</li>
+      <li>Next to <em>System Voice</em>, choose <em>Manage Voices</em>.</li>
+      <li>Select the language and a voice, then press <em>Download</em>. Restart the browser afterwards.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Linux</h2>
+    <p>Chrome on Linux uses <em>Speech Dispatcher</em> for its voices. A family member can install it and a voice package with the software centre or a terminal:</p>
+    <ul>
+      <li>Fedora / Bazzite: <code>sudo dnf install speech-dispatcher espeak-ng</code></li>
+      <li>Ubuntu / Debian: <code>sudo apt install speech-dispatcher espeak-ng</code></li>
+    </ul>
+    <p>Then close Chrome completely and open it again. On some systems Chrome also needs to be started with <code>--enable-speech-dispatcher</code>. The family settings page shows whether Chrome found the voices.</p>
+  </section>
+
+  <section>
+    <h2>Android and ChromeOS</h2>
+    <p>Open the system settings, find <em>Text-to-speech</em> (Android) or <em>Accessibility</em> &rarr; <em>Text-to-speech</em> (ChromeOS), and install the voice data for the language. Then restart the browser.</p>
+  </section>
+
+  <section>
+    <h2>If no voice can be added</h2>
+    <p>Nothing is broken. Tusk still explains everything in the chat, and the person can read the answers. Two useful settings:</p>
+    <ul>
+      <li>Leave <em>Read answers aloud</em> off, so Tusk does not try to speak.</li>
+      <li>Use the hands-free conversation: it still works, with the words shown as captions on the screen.</li>
+    </ul>
+  </section>
+
+  <p><a href="privacy.html">Privacy policy</a> &middot; <a href="index.html">Home</a></p>
+</main>
+</body>
+</html>

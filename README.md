@@ -45,7 +45,7 @@ Press the round microphone badge on Tusk for a hands-free conversation, like a p
 
 Speech is understood on your computer: first by the browser's own on-device listener (the first use of a language may download a small listening pack, with a progress bar), then by Tusk's open Whisper model in WebAssembly if needed. In Family settings, a family member can allow the browser's online listener as a backup; it is off by default, and Tusk's own settings do not offer it.
 
-Tusk can read its answers aloud if you switch it on. A Test voice button in Settings says a sentence and names the voice, and the family settings list a voice per language or say plainly when this computer has none; in that case Tusk says so once in the chat and uses captions.
+Tusk can read its answers aloud if you switch it on. A Test voice button in Settings says a sentence and names the voice, and the family settings list a voice per language or say plainly when this computer has none; in that case Tusk says so once in the chat and uses captions. The extension cannot install an operating-system voice itself, so the family settings link to a short guide for Windows, macOS, Linux, Android and ChromeOS (site/voices.html).
 
 ### Tusk shows what it is doing
 
