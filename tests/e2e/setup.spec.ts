@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { FEATURES } from "../../src/shared/features";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join, resolve, normalize } from "node:path";
@@ -30,7 +31,10 @@ test("setup link opens the extension setup page and saves on yes", async ({ cont
     await expect(page.locator("#s-limit")).toHaveText("7 EUR");
     expect(page.url()).not.toContain("#lt=");
     await page.locator("#yes").click();
-    await expect(page.locator("#app")).toHaveAttribute("data-view", "mic");
+    // After "yes": the microphone step when speaking to Tusk is on, otherwise straight to the done message.
+    await expect(page.locator("#app")).toHaveAttribute("data-view", FEATURES.speechInput ? "mic" : "done");
+    await expect(page.locator("#doneMsg")).toBeVisible();
+    await expect(page.locator("#micBtn")).toHaveCount(FEATURES.speechInput ? 1 : 0);
     const stored = await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings);
     expect(stored).toMatchObject({ provider: "anthropic", apiKey: cfg.apiKey, language: "de", mode: "look-after", monthlyLimit: 7, setupDone: true });
   } finally {
@@ -47,6 +51,7 @@ test("family settings form saves and builds a link", async ({ context, extension
   await expect(page.locator("#saveMsg")).toHaveClass("ok");
   const stored = (await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings)) as { apiKey: string };
   expect(stored.apiKey).toBe("sk-ant-form-key-9999");
+  await expect(page.locator("#micBtn")).toHaveCount(FEATURES.speechInput ? 1 : 0); // no microphone section while speech is off
   await page.locator("#makeLink").click();
   await expect(page.locator("#linkOut")).toContainText("https://thejeswi.github.io/littletusk/setup.html#lt=");
 });

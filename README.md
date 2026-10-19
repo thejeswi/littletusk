@@ -149,10 +149,11 @@ npm run build          # writes the extension to dist/
 Load it in Chrome: open `chrome://extensions`, switch on Developer mode, click "Load unpacked" and choose the `dist` folder.
 
 ```bash
-npm test               # unit tests
+npm test               # unit tests, including the manifest readiness test and the network privacy checks
 npm run typecheck
 npm run e2e            # end to end, with a fake model provider: no key, no cost
 npm run scenarios      # "senior gets stuck" scenarios, free (see Scenario tests)
+npm run check:store    # Chrome Web Store readiness of the built dist/ (run npm run build first)
 npm run screenshots    # regenerates docs/screenshots/ on the local demo pages
 scripts/check-clean.sh # no personal paths or names in tracked files or the build
 ```

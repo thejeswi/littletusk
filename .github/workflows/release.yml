@@ -26,6 +26,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Chrome Web Store readiness of the build
+        run: npm run check:store
       - name: No personal paths or names in the build
         run: bash scripts/check-clean.sh
       - name: Check the tag matches the manifest version

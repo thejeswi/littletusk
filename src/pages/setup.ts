@@ -1,4 +1,5 @@
 import { type Language, type Mode, type Settings } from "../shared/protocol";
+import { FEATURES } from "../shared/features";
 import { PROVIDERS, modelsFor, providerInfo } from "../shared/providers";
 import { keyMismatch } from "../shared/key-hint";
 import { decodeSetupConfig, encodeSetupConfig, loadApiKeys, loadSettings, saveSettings, type SetupConfig } from "../shared/settings";
@@ -87,7 +88,7 @@ function maskKey(k: string): string {
   return k.length <= 8 ? "…" : `${k.slice(0, 3)}…${k.slice(-4)}`;
 }
 
-type View = "confirm" | "mic" | "mic-only" | "form" | "declined";
+type View = "confirm" | "mic" | "done" | "mic-only" | "form" | "declined";
 let view: View = "form";
 let pending: SetupConfig | null = null;
 
@@ -98,7 +99,7 @@ function render(): void {
   ($("uiLang") as HTMLSelectElement).value = ui;
   app.dataset.view = view;
   if (view === "confirm") renderConfirm();
-  else if (view === "mic") renderMic(true);
+  else if (view === "mic" || view === "done") renderMic(true);
   else if (view === "mic-only") renderMic(false);
   else if (view === "declined") app.innerHTML = `<section><p>${esc(t().declined)}</p></section>`;
   else void renderForm();
@@ -129,7 +130,7 @@ function renderConfirm(): void {
     await saveSettings(patch);
     pending = null;
     history.replaceState(null, "", location.pathname); // the key must not stay in the address bar
-    view = "mic";
+    view = FEATURES.speechInput ? "mic" : "done"; // no microphone step while speaking to Tusk is off
     render();
   };
   $("no").onclick = () => {
@@ -141,12 +142,14 @@ function renderConfirm(): void {
 }
 
 function micSection(): string {
+  if (!FEATURES.speechInput) return "";
   const tr = t();
   return `<section id="mic"><h2>${tr.micTitle}</h2><p>${tr.micText}</p>
     <div class="buttons"><button id="micBtn">${tr.micButton}</button></div><p id="micMsg" role="status"></p></section>`;
 }
 
 function wireMic(): void {
+  if (!FEATURES.speechInput) return;
   $("micBtn").onclick = async () => {
     const msg = $("micMsg");
     try {
@@ -285,7 +288,7 @@ async function renderForm(): Promise<void> {
 function start(): void {
   $<HTMLImageElement>("tusk").src = chrome.runtime.getURL("assets/tusk.svg");
   $("uiLang").addEventListener("change", (e) => { ui = (e.target as HTMLSelectElement).value as UiLang; render(); });
-  if (location.hash === "#mic") {
+  if (location.hash === "#mic" && FEATURES.speechInput) {
     // Opened by Tusk in a small window because the microphone was not allowed yet.
     view = "mic-only";
     void loadSettings().then((s) => { if (s.language === "de") ui = "de"; render(); });

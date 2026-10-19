@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser speech test</title>
+<style>
+  :root { --ink:#1f2933; --muted:#52606d; --line:#d3dde3; --brand:#2f6f5e; --bg:#f5f3ee; --card:#fff; --bad:#b42318; --ok:#1a7f4b; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#e8edf1; --muted:#a7b4bf; --line:#34424d; --brand:#6fc2a8; --bg:#14191d; --card:#1d252b; --bad:#ff8a7a; --ok:#6fd49b; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 26px; margin: 0 0 4px; } h2 { font-size: 19px; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin: 14px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin: 8px 0; }
+  button, select { font: inherit; min-height: 44px; padding: 6px 16px; border-radius: 22px; border: 2px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button.go { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, select:focus-visible { outline: 3px solid #ffb703; outline-offset: 2px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; } td, th { text-align: left; padding: 3px 10px 3px 0; border-bottom: 1px solid var(--line); }
+  .ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
+  #log { white-space: pre-wrap; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; max-height: 260px; overflow: auto; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+  #heard { font-size: 22px; min-height: 1.6em; }
+  .demo-badge { position: fixed; left: 12px; bottom: 12px; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Browser speech test</h1>
+  <p class="lead">Tries the speech features built into this browser, with nothing from Little Tusk. Open it in the browser you want to test, press a Listen button and speak.</p>
+
+  <section aria-labelledby="h-env">
+    <h2 id="h-env">This browser</h2>
+    <table id="env"></table>
+  </section>
+
+  <section aria-labelledby="h-stt">
+    <h2 id="h-stt">Speech to text</h2>
+    <div class="row">
+      <label for="lang">Language</label>
+      <select id="lang"><option>en-US</option><option>en-IN</option><option>en-GB</option><option>de-DE</option><option>es-ES</option></select>
+    </div>
+    <div class="row">
+      <button id="listenCloud" class="go">Listen: browser default (may use the cloud)</button>
+      <button id="listenLocal" class="go">Listen: only on this computer</button>
+      <button id="stop">Stop</button>
+    </div>
+    <div class="row"><button id="install">Install the on-device language pack</button> <span id="installState"></span></div>
+    <p id="heard" aria-live="polite"></p>
+  </section>
+
+  <section aria-labelledby="h-tts">
+    <h2 id="h-tts">Text to speech</h2>
+    <div class="row"><button id="speak" class="go">Speak a sample sentence</button><span id="ttsState"></span></div>
+    <table id="voices"></table>
+  </section>
+
+  <section aria-labelledby="h-log">
+    <h2 id="h-log">What happened</h2>
+    <div id="log" role="log"></div>
+  </section>
+</main>
+<span class="demo-badge">Demo</span>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const log = (m) => { $("log").textContent += `${new Date().toLocaleTimeString()}  ${m}\n`; $("log").scrollTop = 1e9; };
+  const yes = (b) => `<span class="${b ? "ok" : "bad"}">${b ? "yes" : "no"}</span>`;
+  const SAMPLES = { "en-US": "Hello, I am Tusk. Click on me whenever you need help.", "en-IN": "Hello, I am Tusk. Kindly click on me whenever you need help.", "en-GB": "Hello, I am Tusk. Click on me whenever you need help.", "de-DE": "Hallo, ich bin Tusk. Klicken Sie auf mich, wenn Sie Hilfe brauchen.", "es-ES": "Hola, soy Tusk. Haga clic en mí cuando necesite ayuda." };
+
+  async function env() {
+    const rows = [
+      ["Browser", navigator.userAgent.match(/(Chrome|Edg|Firefox)\/[\d.]+/)?.[0] ?? navigator.userAgent],
+      ["Speech recognition built in", yes(!!R)],
+      ["Can run on this computer only", yes(!!R && "processLocally" in R.prototype)],
+    ];
+    if (R && R.available) {
+      for (const l of ["en-US", "en-IN", "de-DE", "es-ES"]) {
+        try { rows.push([`On-device pack, ${l}`, String(await R.available({ langs: [l], processLocally: true }))]); } catch (e) { rows.push([`On-device pack, ${l}`, "error: " + e.message]); }
+      }
+    }
+    rows.push(["Speech synthesis built in", yes("speechSynthesis" in window)]);
+    try { const d = await navigator.mediaDevices.enumerateDevices(); const m = d.filter((x) => x.kind === "audioinput"); rows.push(["Microphones", m.length ? m.map((x) => x.label || "(allow the microphone to see names)").join("<br>") : "none found"]); } catch { rows.push(["Microphones", "unknown"]); }
+    $("env").innerHTML = rows.map(([k, v]) => `<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join("");
+  }
+
+  function listVoices() {
+    const v = speechSynthesis.getVoices();
+    $("voices").innerHTML = v.length
+      ? "<tr><th>Voice</th><th>Language</th><th>Runs on</th></tr>" + v.slice().sort((a, b) => a.lang.localeCompare(b.lang)).map((x) => `<tr><td>${x.name}</td><td>${x.lang}</td><td>${x.localService ? "this computer" : "online (sends the text out)"}</td></tr>`).join("")
+      : "<tr><td>No voices are installed in this browser.</td></tr>";
+  }
+
+  let rec = null;
+  function listen(local) {
+    if (!R) { log("This browser has no speech recognition."); return; }
+    if (rec) try { rec.abort(); } catch {}
+    rec = new R();
+    rec.lang = $("lang").value; rec.interimResults = true; rec.continuous = false;
+    if ("processLocally" in rec) rec.processLocally = local;
+    $("heard").textContent = "Listening… speak now.";
+    const t0 = Date.now();
+    rec.onstart = () => log(`start (${local ? "on this computer only" : "browser default"}, ${rec.lang})`);
+    rec.onaudiostart = () => log("microphone opened");
+    rec.onspeechstart = () => log("speech detected");
+    rec.onresult = (e) => { const r = e.results[e.results.length - 1]; $("heard").textContent = r[0].transcript; if (r.isFinal) log(`FINAL "${r[0].transcript}" confidence ${(r[0].confidence * 100).toFixed(0)}% after ${((Date.now() - t0) / 1000).toFixed(1)} s`); };
+    rec.onerror = (e) => { log("error: " + e.error + (e.message ? " (" + e.message + ")" : "")); if (!$("heard").textContent || $("heard").textContent.startsWith("Listening")) $("heard").textContent = ""; };
+    rec.onend = () => log("end");
+    try { rec.start(); } catch (e) { log("could not start: " + e.message); }
+  }
+
+  $("listenCloud").onclick = () => listen(false);
+  $("listenLocal").onclick = () => listen(true);
+  $("stop").onclick = () => { try { rec && rec.stop(); } catch {} };
+  $("install").onclick = async () => {
+    if (!R || !R.install) { log("This browser cannot install on-device packs."); return; }
+    const l = $("lang").value; $("installState").textContent = "downloading…"; log(`installing on-device pack for ${l}…`);
+    try { const ok = await R.install({ langs: [l], processLocally: true }); $("installState").textContent = ok ? "installed" : "not installed"; log(`install ${l}: ${ok}`); } catch (e) { $("installState").textContent = "failed"; log("install failed: " + e.message); }
+    env();
+  };
+  $("speak").onclick = () => {
+    const l = $("lang").value; const u = new SpeechSynthesisUtterance(SAMPLES[l] ?? SAMPLES["en-US"]); u.lang = l;
+    const pick = speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(l.slice(0, 2).toLowerCase())).sort((a, b) => Number(b.localService) - Number(a.localService))[0];
+    if (pick) u.voice = pick;
+    u.onstart = () => { $("ttsState").textContent = pick ? `${pick.name} (${pick.localService ? "this computer" : "online"})` : "default voice"; log("speaking: " + ($("ttsState").textContent)); };
+    u.onerror = (e) => log("speech error: " + e.error);
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  };
+  speechSynthesis.onvoiceschanged = listVoices; listVoices(); env();
+</script>
+</body>
+</html>

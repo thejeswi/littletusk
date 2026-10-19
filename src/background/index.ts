@@ -1,6 +1,7 @@
 // Service worker: the message router. It keeps one offscreen document (the agent) alive, forwards messages
 // between content scripts and the agent, runs page commands in tabs, speaks with chrome.tts and watches settings.
 import type { ChatView, FromAgent, FromContent, Language, PageCommand, PageResult, Settings, ToAgent, ToContent } from "../shared/protocol";
+import { FEATURES } from "../shared/features";
 import { isWebUrl } from "../shared/protocol";
 import { loadSettings, publicSettings, saveSettings } from "../shared/settings";
 import { SETTINGS_KEY } from "../shared/protocol";
@@ -14,6 +15,13 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 let creating: Promise<void> | undefined;
 
+/** WORKERS always (SQLite and the agent run in workers); USER_MEDIA only when speaking to Tusk is on. */
+export function offscreenReasons(): chrome.offscreen.Reason[] {
+  const reasons = ["WORKERS" as chrome.offscreen.Reason];
+  if (FEATURES.speechInput) reasons.push("USER_MEDIA" as chrome.offscreen.Reason);
+  return reasons;
+}
+
 export async function ensureOffscreen(): Promise<void> {
   // Test builds: the storage specs open the database themselves, so the agent must stay away from it.
   if (__E2E__ && (await chrome.storage.local.get("__no_offscreen")).__no_offscreen) return;
@@ -23,8 +31,10 @@ export async function ensureOffscreen(): Promise<void> {
     creating = chrome.offscreen
       .createDocument({
         url: OFFSCREEN_PATH,
-        reasons: ["WORKERS" as chrome.offscreen.Reason, "USER_MEDIA" as chrome.offscreen.Reason],
-        justification: "Runs Tusk's agent and its local database, and listens to the microphone when the person speaks.",
+        reasons: offscreenReasons(),
+        justification: FEATURES.speechInput
+          ? "Runs Tusk's agent and its local database, and listens to the microphone when the person speaks."
+          : "Runs Tusk's agent and its local database in workers.",
       })
       .catch((e) => {
         // A concurrent creation (another wake-up of this worker) is fine.

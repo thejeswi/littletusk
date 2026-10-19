@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Little Tusk privacy policy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <p><a href="index.html">&larr; Back to the Little Tusk home page</a></p>
+  <img class="tusk" src="tusk.svg" alt="Tusk, a baby elephant">
+  <h1>Privacy policy</h1>
+  <p>Last updated: 2026-10-19</p>
+  <p>This page explains, in plain words, what Little Tusk does with your information. The short version: there are no servers of ours, and the only outside company that sees anything is the AI provider you choose.</p>
+
+  <section>
+    <h2>Who is behind Little Tusk</h2>
+    <p>Little Tusk is an open-source project by Thejeswi Preetham. There is no company behind it. There are no accounts, no servers of our own, no analytics, no tracking and no ads. The code is public on <a href="https://github.com/thejeswi/littletusk">GitHub</a>, so anyone can check what is written here.</p>
+  </section>
+
+  <section>
+    <h2>You bring your own AI key</h2>
+    <p>Little Tusk does not include an AI service. To work, it needs an API key. You, or a family member, get that key from a model provider you choose and pay for it there: Anthropic, OpenAI, Google, Mistral, OpenRouter or DeepSeek. Set a spending limit with the provider. Tusk also has its own monthly spending limit in its settings.</p>
+    <p>Requests go straight from your browser to that provider. Nothing passes through us.</p>
+  </section>
+
+  <section>
+    <h2>What is sent to the AI provider</h2>
+    <p>When you ask Tusk for help, or accept one of its offers, these things are sent to your chosen provider:</p>
+    <ul>
+      <li>What you type in the chat.</li>
+      <li>What is on the page you are asking about: the visible text, and the names of buttons, links and fields. It also includes what is already filled in ordinary fields on that page (shortened to 200 characters each), for example a name in a form. It never includes what is in password, code, PIN or IBAN fields. For those, Tusk only learns whether the field is empty or filled.</li>
+      <li>Tusk's own notes: a short list of things that help next time, such as a preference or a family name. Tusk is told never to keep secrets there, and it refuses to store anything that looks like a password, code, or bank or card number.</li>
+    </ul>
+    <p>Each provider has its own privacy policy and keeps its servers in its own places. Please check the policy of the provider you choose. DeepSeek is a China-based company and its servers are outside the EU, so a family should read its policy first.</p>
+  </section>
+
+  <section>
+    <h2>What stays on your computer</h2>
+    <ul>
+      <li>Your settings, such as language, mode and spending limit.</li>
+      <li>Your API key or keys. They are stored as plain text in the extension's private storage inside your browser profile, like any extension setting. They are not encrypted. Anyone who can use your computer profile could read them. Please use a key with a spending limit.</li>
+      <li>The chat history and Tusk's notes. They live in a database in the extension's private storage.</li>
+      <li>The monthly spend counter.</li>
+    </ul>
+    <p>None of this is sent to us, because we have no server to send it to.</p>
+    <h3>How to delete it</h3>
+    <ul>
+      <li>The <em>New chat</em> button starts a fresh conversation and clears the chat from the screen. Tusk no longer uses the old conversation. The old entries can stay in the extension's database until you remove the extension.</li>
+      <li>Removing the extension from your browser deletes everything it stored.</li>
+      <li>In <em>Family settings</em>, empty the key field and save to remove that key.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Passwords</h2>
+    <p>Tusk never types into password-type fields and never reads them. It does not receive their values. The same goes for fields that look like one-time codes, PINs, card numbers or IBANs. Tusk marks the field and asks you to type.</p>
+  </section>
+
+  <section>
+    <h2>Speech</h2>
+    <p>Speaking to Tusk is switched off in this version. When it is switched on in a later version, speech is turned into text on your computer with an open model (Whisper), and the audio never leaves your computer. The model file is downloaded once from Hugging Face. Tusk can also read its answers aloud, but only if you switch on "Read answers aloud" in its settings. It uses your browser's voices and prefers the ones that run on your computer. If there is none for your language, the browser may use an online voice from its maker, and then the text of the answer goes to that company.</p>
+  </section>
+
+  <section>
+    <h2>The setup link</h2>
+    <p>A family member can make a setup link that carries your settings, including the key. They travel in the part of the link after the <code>#</code>. Browsers never send that part to any server. The setup page at thejeswi.github.io only runs in your browser. GitHub Pages hosts it like any web page, so GitHub may log ordinary page requests, but not the part after the <code>#</code>. Please delete the email after setup.</p>
+  </section>
+
+  <section>
+    <h2>Why Tusk asks for access to all websites</h2>
+    <p>Tusk helps on any site, so it reads the page you are on. It does this only to help you. It sends the page to your chosen provider only when you ask for help or accept an offer. In "Look after me" mode, spotting popups and scam-like text happens on your computer and sends nothing.</p>
+  </section>
+
+  <section>
+    <h2>Chrome Web Store user data policy</h2>
+    <p>Little Tusk's use of information follows the Chrome Web Store user data policy, including its Limited Use rules:</p>
+    <ul>
+      <li>Data is used only to provide the helper features you asked for.</li>
+      <li>It is not sold.</li>
+      <li>It is not used for ads or to judge whether you can get credit.</li>
+      <li>It is not transferred to anyone except the provider you chose.</li>
+      <li>No human reads it. We never receive it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Children</h2>
+    <p>Little Tusk is not directed at children.</p>
+  </section>
+
+  <section>
+    <h2>Changes and contact</h2>
+    <p>If this policy changes, the new text goes on this page with a new date. Questions or worries are welcome on the <a href="https://github.com/thejeswi/littletusk/issues">GitHub issues page</a>.</p>
+  </section>
+  <p><a href="index.html">&larr; Back to the home page</a></p>
+</main>
+</body>
+</html>

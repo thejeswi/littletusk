@@ -1,8 +1,11 @@
 // Copies the manifest, assets, icons and the .wasm runtime files into dist/ (no CDN loading of code).
 const out = process.argv[2] ?? "dist";
-import { cpSync, copyFileSync, mkdirSync, existsSync } from "node:fs";
+import { cpSync, copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { transformManifest } from "./manifest-transform.mjs";
 mkdirSync(out + "/wasm", { recursive: true });
-copyFileSync("manifest.json", out + "/manifest.json");
+const e2e = out.includes("e2e");
+const manifest = transformManifest(JSON.parse(readFileSync("manifest.json", "utf8")), { e2e });
+writeFileSync(out + "/manifest.json", JSON.stringify(manifest, null, 2) + "\n");
 cpSync("assets", out + "/assets", { recursive: true });
 cpSync("assets/icons", out + "/icons", { recursive: true });
 const copies = [
