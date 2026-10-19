@@ -93,6 +93,12 @@ function renderHint(): void {
   if (starting) {
     h1.textContent = t(lang, "capStarting");
     h2.textContent = progress && progress !== "…" ? progress : "";
+  } else if (listening && phase === "transcribing") {
+    h1.textContent = t(lang, "transcribing");
+    h2.textContent = progress && progress !== "…" ? progress : "";
+  } else if (listening && phase === "paused") {
+    h1.textContent = t(lang, "micPausedTitle");
+    h2.textContent = "";
   } else if (listening) {
     h1.textContent = t(lang, "speakHint1");
     h2.textContent = t(lang, "speakHint2");
@@ -113,18 +119,24 @@ function sendToAgent(msg: ToAgent): void {
   void chrome.runtime.sendMessage(msg).catch(() => undefined);
 }
 
+/** The content script knows this page's tab, so it asks the agent for us (the iframe has no sender.tab). */
+function requestMic(op: "start" | "stop"): void {
+  try { window.parent.postMessage({ __littletusk: "mic-request", op }, "*"); } catch { /* top level */ }
+}
+
 function startListening(): void {
   if (listening || micBusy) return;
+  sendAfterStop = false; // a new session is not a second half of the last one
   listening = true; // optimistic: the hint appears at once, the engine confirms
   micBusy = true;
   input.focus({ preventScroll: true });
-  sendToAgent({ to: "agent", type: "mic-start" });
+  requestMic("start");
   renderHint();
 }
 
 function stopListening(): void {
   if (!listening || micBusy) return;
-  sendToAgent({ to: "agent", type: "mic-stop" });
+  requestMic("stop");
   listening = false;
   micBusy = false;
   sessionWords = false;
@@ -191,9 +203,6 @@ window.addEventListener("message", (e) => {
         return;
       }
     }
-  } else if (!listening && sendAfterStop) {
-    // Nothing was heard: do not send whatever may be typed later.
-    sendAfterStop = false;
   }
   renderHint();
 });

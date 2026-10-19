@@ -394,8 +394,12 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   }
 
   function toggleMic() {
-    if (listening) { listening = false; cb.onMicStop(); }
-    else { listening = true; cb.onMicStart(); }
+    if (listening) {
+      // Do not hand a partial line on as if it were the final words; the engine sends the final text.
+      listening = false;
+      speechText = "";
+      cb.onMicStop();
+    } else { listening = true; cb.onMicStart(); }
     applyMic();
   }
   function applyMic() {
@@ -432,7 +436,13 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   });
   // The composing iframe hosts the microphone; wait until its script is ready, then deliver queued commands.
   window.addEventListener("message", (e) => {
-    const m = e.data as { __littletusk?: string } | undefined;
+    const m = e.data as { __littletusk?: string; op?: "start" | "stop" } | undefined;
+    if (m?.__littletusk === "mic-request") {
+      // The composing iframe asks for the microphone; this script knows the tab it belongs to.
+      if (m.op === "start" && !listening) toggleMic();
+      else if (m.op === "stop" && listening) toggleMic();
+      return;
+    }
     if (m?.__littletusk !== "speech-ready") return;
     composeReady = true;
     for (const cmd of speechQueue.splice(0)) {
@@ -855,6 +865,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       if (text !== undefined) speechText = text;
       else if (!l || ph === "starting") speechText = ""; // a new session starts with no stale words
       micLive = l && micPhase !== "transcribing";
+      // The listening words and hints live in the chat's typing box (A1). If the microphone was
+      // started from the permission window while the chat was closed, open the chat so they are visible.
+      if (l && !conversation?.on && panel !== "chat") setPanel("chat");
       applyMood();
       phase += 1;
       waveBars.forEach((b, i) => {

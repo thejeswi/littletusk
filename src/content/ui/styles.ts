@@ -164,7 +164,7 @@ button.talk:focus-visible .dot{outline:3px solid #ffb703;outline-offset:3px}
 .q .res{margin-top:8px;font-size:14px;color:#52606d}
 .think{align-self:flex-start;color:#52606d;font-size:15px;padding:4px 8px}
 .compose{display:flex;gap:8px;padding:10px 8px;border-top:1px solid #d3dde3;align-items:center}
-.compose-frame{flex:1;min-width:0;height:104px;border:0;background:transparent;color-scheme:normal}
+.compose-frame{flex:1;min-width:0;height:128px;border:0;background:transparent;color-scheme:normal}
 .mic{width:52px;height:52px;border-radius:50%;border:2px solid #99bbbb;background:#fff;font-size:24px;flex:none;padding:0}
 .mic.on{background:#2f9e6d;border-color:#2f9e6d}
 .foot{padding:6px 14px 10px;font-size:13px;color:#52606d;text-align:center}
