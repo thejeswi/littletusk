@@ -37,9 +37,19 @@ Type your question. Between the messages, Tusk lists in plain words what it did:
 
 The chat also works in a narrow window, for example on a small laptop or a phone-sized window.
 
-### Speak to Tusk (switched off for now)
+### Talk to Tusk
 
-Speaking to Tusk is built but switched off until it reliably hears people (`speechInput` in `src/shared/features.ts`). When it is on: press the microphone and talk. Your words land in the same chat, and Tusk can read its answers aloud. Speech is turned into text on your computer with Whisper running in WebAssembly. Your voice is never sent anywhere.
+Press the microphone in the chat and talk: your words appear in the text box, with a two-line hint, and nothing is sent until you press Send. The microphone button turns red with a stop square while it listens.
+
+Press the round microphone badge on Tusk for a hands-free conversation, like a phone call. Tusk listens, sends what you said when you pause, says its answer aloud, then listens again. The words show as captions ("You: …", "Tusk: …") with a red Stop talking button. It ends on Stop talking, the badge, a New chat, or 20 seconds of silence. A transcript that is empty, very short or in the wrong writing system is dropped with "Sorry, I didn't catch that." instead of being sent.
+
+Speech is understood on your computer: first by the browser's own on-device listener (the first use of a language may download a small listening pack, with a progress bar), then by Tusk's open Whisper model in WebAssembly if needed. In Family settings, a family member can allow the browser's online listener as a backup; it is off by default, and Tusk's own settings do not offer it.
+
+Tusk can read its answers aloud if you switch it on. A Test voice button in Settings says a sentence and names the voice, and the family settings list a voice per language or say plainly when this computer has none; in that case Tusk says so once in the chat and uses captions.
+
+### Tusk shows what it is doing
+
+Tusk's ears, trunk and eyes move with its work: a hello when you click it, wide ears while listening, bouncing dots while thinking, a swaying trunk while speaking, a happy hop when a step worked, and a drooped head when something failed. People who switch off motion in their computer settings get a still Tusk.
 
 ### Safety
 
@@ -85,8 +95,8 @@ The built extension is not stored in the repository. A release is built from the
 
 ```bash
 # set "version" in manifest.json and package.json, commit, then:
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The workflow (`.github/workflows/release.yml`) runs the type check and tests, builds from a clean checkout, checks that the build contains no personal paths or names, and attaches the zip to a GitHub Release. The tag has to match the version in `manifest.json`. Running the workflow by hand builds the same zip as a download without making a release.
@@ -95,7 +105,7 @@ The workflow (`.github/workflows/release.yml`) runs the type check and tests, bu
 
 - Everything stays in the browser. The conversation lives in pi-durable on SQLite compiled to WebAssembly, in the extension's private storage.
 - The only network calls go to the model provider you chose.
-- Speech is transcribed on your computer with Whisper in WebAssembly. The model is downloaded once from Hugging Face (about 100 to 150 MB) and cached. Audio never leaves the computer.
+- Speech is understood on your computer. The browser's on-device listener is used first; its listening pack is downloaded by Chrome. If it is not available, Tusk's Whisper model runs in WebAssembly and is downloaded once from Hugging Face (about 100 to 150 MB) and cached. Audio leaves the computer only if a family member allows the browser's online listener (off by default), and then it goes to the browser's maker (Google) for recognition under its own policy. The chat microphone never sends anything until the person presses Send.
 - There is no server of ours, no account and no tracking.
 
 ## Model providers
@@ -113,6 +123,7 @@ Chrome
 ├── service worker: message router, starts the offscreen document, text to speech
 ├── offscreen document: the agent (pi-durable harness, pi-ai model providers)
 │     ├── worker: SQLite-WASM in the extension's private storage (the durable conversation)
+│     ├── browser speech: on-device recognizer first, Whisper in a worker as the fallback
 │     └── worker: Whisper in WebAssembly (speech to text)
 └── extension pages: family settings and the setup link landing page
 ```
@@ -171,7 +182,7 @@ Both runs write `test-results/scenarios/<id>/transcript.md` (the chat in order: 
 
 An early prototype. Known gaps:
 
-- Speech input is switched off: on one test laptop it did not hear the person yet. Whisper itself is tested on a generated sentence (opt-in test).
+- Speech quality depends on the device and the browser's on-device listener. Tusk falls back to Whisper when the browser listener is missing or hears silence; the fallback downloads a model once.
 - There is no Chrome Web Store listing yet.
 - The automated tests use a scripted fake model. They have not been run against a live model.
 

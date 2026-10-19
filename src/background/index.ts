@@ -1,8 +1,9 @@
 // Service worker: the message router. It keeps one offscreen document (the agent) alive, forwards messages
 // between content scripts and the agent, runs page commands in tabs, speaks with chrome.tts and watches settings.
-import type { ChatView, FromAgent, FromContent, Language, PageCommand, PageResult, Settings, ToAgent, ToContent } from "../shared/protocol";
+import type { ChatView, FromAgent, FromContent, Language, PageCommand, PageResult, Settings, ToAgent, ToContent, VoiceInfo, VoiceList, VoiceTest } from "../shared/protocol";
 import { FEATURES } from "../shared/features";
 import { isWebUrl } from "../shared/protocol";
+import { t } from "../shared/i18n";
 import { loadSettings, publicSettings, saveSettings } from "../shared/settings";
 import { SETTINGS_KEY } from "../shared/protocol";
 
@@ -131,21 +132,74 @@ async function toAllTabs(msg: ToContent): Promise<void> {
 // ---------- speech ----------
 
 const TTS_LANG: Record<Language, string> = { en: "en-US", de: "de-DE", es: "es-ES", "en-IN": "en-IN" };
+const LANGS: Language[] = ["en", "de", "es", "en-IN"];
 
-async function speak(text: string, lang: Language): Promise<void> {
+/** The best voice for `lang`, or null when this computer has none. Prefers a voice that runs on the computer. */
+async function pickVoice(lang: Language): Promise<VoiceInfo | null> {
   const want = TTS_LANG[lang] ?? "en-US";
   const base = want.slice(0, 2).toLowerCase();
-  let voiceName: string | undefined;
-  try {
-    const voices = await chrome.tts.getVoices();
-    const fits = voices.filter((v) => (v.lang ?? "").toLowerCase().startsWith(base));
-    const exact = fits.filter((v) => (v.lang ?? "").toLowerCase() === want.toLowerCase());
-    const pool = exact.length ? exact : fits;
-    voiceName = (pool.find((v) => !v.remote) ?? pool[0])?.voiceName;
-  } catch {
-    /* default voice */
+  let voices: chrome.tts.TtsVoice[] = [];
+  try { voices = await chrome.tts.getVoices(); } catch { return null; }
+  const fits = voices.filter((v) => (v.lang ?? "").toLowerCase().startsWith(base) && v.voiceName);
+  if (!fits.length) return null;
+  const exact = fits.filter((v) => (v.lang ?? "").toLowerCase() === want.toLowerCase());
+  const pool = exact.length ? exact : fits;
+  const voice = pool.find((v) => !v.remote) ?? pool[0];
+  return { name: voice.voiceName!, online: !!voice.remote };
+}
+
+/** Tells Tusk's chat and page that a voice is playing (its speaking mood) and reports the end back to the agent. */
+async function speechState(on: boolean): Promise<void> {
+  await toAllTabs({ to: "content", type: "speaking", on });
+}
+
+function tellAgent(msg: { type: "speak-ended"; reqId: string } | { type: "no-voice"; lang: Language }): void {
+  void chrome.runtime.sendMessage({ ...msg, to: "agent", relayed: true }).catch(() => undefined);
+}
+
+async function speak(text: string, lang: Language, reqId?: string): Promise<VoiceTest> {
+  const voice = await pickVoice(lang);
+  if (!voice) {
+    tellAgent({ type: "no-voice", lang });
+    return { none: true };
   }
-  chrome.tts.speak(text, { lang: want, voiceName, rate: 0.95 });
+  let ended = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const done = () => {
+    if (ended) return;
+    ended = true;
+    if (timer) clearTimeout(timer);
+    void speechState(false);
+    if (reqId) tellAgent({ type: "speak-ended", reqId });
+  };
+  void speechState(true);
+  // A voice that never reports its end must not leave a conversation stuck in "speaking".
+  timer = setTimeout(done, 20_000 + text.length * 130);
+  try {
+    chrome.tts.speak(text, {
+      lang: TTS_LANG[lang] ?? "en-US",
+      voiceName: voice.name,
+      rate: 0.95,
+      onEvent: (e) => {
+        if (e.type === "end" || e.type === "error" || e.type === "interrupted" || e.type === "cancelled") done();
+      },
+    }, () => { if (chrome.runtime.lastError) done(); });
+  } catch {
+    done();
+  }
+  return { voice };
+}
+
+/** Family settings: one line per language. */
+async function listVoices(): Promise<VoiceList> {
+  const out = {} as VoiceList;
+  for (const lang of LANGS) out[lang] = await pickVoice(lang);
+  return out;
+}
+
+/** Tusk's settings: say a test sentence and tell the person which voice spoke. */
+async function testVoice(lang: Language): Promise<VoiceTest> {
+  return speak(t(lang, "voiceTestSentence"), lang);
 }
 
 // ---------- settings ----------
@@ -186,7 +240,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 type SwMessage = FromAgent | FromContent;
 
 /** Only the offscreen document may use these. */
-const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "open-url", "get-settings", "e2e-get", "e2e-set"]);
+const AGENT_ONLY = new Set(["page", "broadcast-view", "speak", "mic-level", "conversation-state", "no-voice-noticed", "open-url", "get-settings", "e2e-get", "e2e-set"]);
 
 function fromOffscreen(sender: chrome.runtime.MessageSender): boolean {
   return !sender.tab && sender.url === OFFSCREEN_URL;
@@ -212,13 +266,21 @@ async function handleSw(msg: SwMessage, sender: chrome.runtime.MessageSender): P
     case "broadcast-view":
       return void (await toAllTabs({ to: "content", type: "view", view: msg.view as ChatView }));
     case "speak":
-      return void (await speak(msg.text, msg.lang));
+      return await speak(msg.text, msg.lang, msg.reqId);
+    case "conversation-state":
+      return void (await toAllTabs({ to: "content", type: "conversation", state: msg.state }));
+    case "no-voice-noticed":
+      return void (await saveSettings({ noVoiceNoticed: true }));
+    case "test-voice":
+      return await testVoice(msg.lang);
+    case "list-voices":
+      return await listVoices();
     case "open-mic-permission":
       return void (await chrome.windows.create({
         url: chrome.runtime.getURL("pages/setup.html#mic"), type: "popup", width: 520, height: 460, focused: true,
       }));
     case "mic-level":
-      return void (await toAllTabs({ to: "content", type: "mic", level: msg.level, listening: msg.listening, phase: msg.phase, progress: msg.progress }));
+      return void (await toAllTabs({ to: "content", type: "mic", level: msg.level, listening: msg.listening, phase: msg.phase, progress: msg.progress, text: msg.text }));
     case "e2e-get":
       if (__E2E__) return { value: (await chrome.storage.local.get(msg.key))[msg.key] };
       return undefined;

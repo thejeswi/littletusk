@@ -1,7 +1,7 @@
 // On-page overlay: the floating baby elephant "Tusk", its chat, settings and target marks. Clicking Tusk opens the chat.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
-import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
-import { LANGUAGE_NAMES, t, type I18nKey } from "../../shared/i18n";
+import type { ChatItem, ChatView, ConversationState, Language, MicPhase, Mode, Settings, VoiceTest } from "../../shared/protocol";
+import { LANGUAGE_NAMES, TABLES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
 import { FEATURES } from "../../shared/features";
 
@@ -19,12 +19,23 @@ export interface OverlayCallbacks {
   onTuck(scope: "site" | "hour"): void;
   onOpenFamilySettings(): void;
   onAcceptOverlayHelp(overlayId: string): void;
+  onConversationStart(): void; // the microphone badge on Tusk
+  onConversationStop(): void; // Stop talking, or the badge again
+  onTestVoice(): void; // Tusk settings: say a sentence and name the voice
 }
 
 export interface OverlayController {
   setView(view: ChatView): void;
   setSettings(s: PublicSettings): void;
-  setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string): void;
+  setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string, text?: string): void;
+  /** E1 + F1: the spoken conversation is on (or off with null). */
+  setConversation(state: ConversationState | null): void;
+  /** Explicit mood. hello, done and sorry play once and fall back; the others stay until setMood("idle"). */
+  setMood(m: Mood): void;
+  /** Read-aloud is playing. */
+  setSpeaking(on: boolean): void;
+  /** The answer to Test voice (null: none). */
+  setVoiceTest(result: VoiceTest | null): void;
   say(text: string): void;
   pointAt(el: Element, say: string): void;
   spotlight(el: Element, say: string): void;
@@ -34,31 +45,36 @@ export interface OverlayController {
   destroy(): void;
 }
 
-// Approved character art (assets/tusk.svg and assets/tusk-pointing.svg), inlined.
-const REST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 135" aria-hidden="true" focusable="false">
-  <ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
-  <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <circle cx="47" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="73" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-  <circle cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+// Approved character art (assets/tusk.svg and assets/tusk-pointing.svg), built from parts so each mood can move
+// them on its own: body (earL, earR, head, tusks, trunk, eyes, cheeks) plus overlay layers (rings, dots, spark).
+const LAYERS = `<g class="rings" stroke="#2f9e6d" stroke-width="3" fill="none" stroke-linecap="round"><path d="M112 40 q8 15 0 30"/><path d="M120 34 q11 21 0 42"/></g>
+  <g class="dots" fill="#52606d"><circle cx="86" cy="12" r="3.5"/><circle cx="97" cy="8" r="3.5"/><circle cx="108" cy="4" r="3.5"/></g>
+  <g class="spark" fill="#ffb703"><path d="M10 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M104 2 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/></g>`;
+const TUSK_PATH = `fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"`;
+function tuskSvg(box: number, tuskR: string, trunk: string, eyeX: [number, number], cheekX: [number, number]): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box} 135" aria-hidden="true" focusable="false">
+  <g class="body">
+    <ellipse class="earL" cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+    <ellipse class="earR" cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+    <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
+    <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" ${TUSK_PATH}/>
+    <path d="${tuskR}" ${TUSK_PATH}/>
+    <g class="trunk"><path d="${trunk}" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/></g>
+    <g class="eyes"><circle cx="${eyeX[0]}" cy="52" r="3" fill="#2b2b2b"/><circle cx="${eyeX[1]}" cy="52" r="3" fill="#2b2b2b"/></g>
+    <circle class="cheek" cx="${cheekX[0]}" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+    <circle class="cheek" cx="${cheekX[1]}" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+  </g>
+  ${LAYERS}
 </svg>`;
-const POINT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 135 135" aria-hidden="true" focusable="false">
-  <ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
-  <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M72 80 q10 3 10 13 q-8 0 -12 -9 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M60 80 C 72 92, 84 74, 100 84 C 110 90, 120 80, 128 82" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <circle cx="50" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="76" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="42" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-  <circle cx="82" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-</svg>`;
+}
+const REST_SVG = tuskSvg(120, "M75 82 q9 5 7 14 q-8 -1 -11 -11 z",
+  "M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124", [47, 73], [40, 80]);
+const POINT_SVG = tuskSvg(135, "M72 80 q10 3 10 13 q-8 0 -12 -9 z",
+  "M60 80 C 72 92, 84 74, 100 84 C 110 90, 120 80, 128 82", [50, 76], [42, 82]);
+
+export type Mood = "idle" | "hello" | "listening" | "thinking" | "speaking" | "done" | "sorry";
+const ONE_SHOT_MS: Partial<Record<Mood, number>> = { hello: 1700, done: 1900, sorry: 2000 };
+const WALK_MS = 700; // a little longer than the glide (0.6 s)
 
 const S = 72; // Tusk box size in px
 const GAP = 12;
@@ -104,6 +120,17 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   let rafId = 0;
   let lastMarkKey = "";
   let viewSeen = false;
+  let micLive = false; // listening bubble is up and not transcribing
+  let conversation: ConversationState | null = null;
+  let speakingOn = false;
+  let speechText = ""; // live words, forwarded to the chat's typing box
+  let forced: Mood | null = null; // from setMood
+  let oneShot: Mood | null = null;
+  let oneShotTimer: ReturnType<typeof setTimeout> | undefined;
+  let walkTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastPos = "";
+  const actionSeen = new Map<string, string>(); // item id -> state last seen
+  const noticesSeen = new Set<string>();
   let lastTuskKey = "";
   let shownQuestion = "";
   let destroyed = false;
@@ -132,7 +159,52 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const breathe = h("div", "breathe");
   const rest = h("div", "pose-rest"); rest.innerHTML = REST_SVG;
   const point = h("div", "pose-point"); point.innerHTML = POINT_SVG;
-  breathe.append(rest, point); flipEl.append(breathe); tusk.append(flipEl);
+  breathe.append(rest, point);
+  // Moods: one class on the button (m-listening ...), CSS does the moving.
+  // "Clicked {name}": the words before and after the name differ by language, so match both ends.
+  const doneTexts = (["actClicked", "actClosed"] as const).flatMap((k) =>
+    Object.values(TABLES).map((tb) => {
+      const [before = "", after = ""] = (tb[k] as string).split("{name}");
+      return { before, after };
+    }));
+  // The person not being heard is not Tusk's failure: no drooping "sorry" for these notices.
+  const notSorry = (["noSpeech", "noCatch"] as const).flatMap((k) => Object.values(TABLES).map((tb) => tb[k] as string));
+  const baseMood = (): Mood =>
+    conversation?.phase === "speaking" ? "speaking"
+    : conversation?.phase === "thinking" ? "thinking"
+    : conversation?.phase === "listening" || conversation?.phase === "starting" ? "listening"
+    : micLive || forced === "listening" ? "listening"
+    : speakingOn || forced === "speaking" ? "speaking"
+    : view?.busy || forced === "thinking" ? "thinking" : "idle";
+  function applyMood() {
+    const m = oneShot ?? baseMood();
+    for (const c of [...tusk.classList]) if (c.startsWith("m-")) tusk.classList.remove(c);
+    tusk.classList.add("m-" + m);
+  }
+  function playOnce(m: Mood) {
+    clearTimeout(oneShotTimer);
+    oneShot = null; applyMood();
+    void tusk.getBoundingClientRect(); // restart the animation if the same mood plays twice
+    oneShot = m; applyMood();
+    oneShotTimer = setTimeout(() => { oneShot = null; applyMood(); }, ONE_SHOT_MS[m] ?? 1800);
+  }
+  function moodsFromView(v: ChatView) {
+    let mood: Mood | null = null;
+    for (const it of v.items) {
+      if (it.kind === "action") {
+        const was = actionSeen.get(it.id);
+        actionSeen.set(it.id, it.state);
+        if (!viewSeen || was === it.state) continue;
+        if (it.state === "failed") mood = "sorry";
+        else if (it.state === "done" && mood !== "sorry" && doneTexts.some((d) => it.text.startsWith(d.before) && it.text.endsWith(d.after) && it.text.length >= d.before.length + d.after.length)) mood = "done";
+      } else if (it.kind === "notice" && !noticesSeen.has(it.id)) {
+        noticesSeen.add(it.id);
+        if (viewSeen && !notSorry.some((n) => it.text.startsWith(n))) mood = "sorry";
+      }
+    }
+    if (mood) playOnce(mood); else applyMood();
+  }
+  applyMood(); flipEl.append(breathe); tusk.append(flipEl);
   bind(() => tusk.setAttribute("aria-label", t(lang(), "tuskName") + ": " + t(lang(), "chat")));
 
   const bubbleEl = h("div", "bubble", { role: "status" }); bubbleEl.hidden = true;
@@ -187,16 +259,25 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const composeUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/compose.html") : "about:blank";
   const composeFrame = h("iframe", "compose-frame", { src: composeUrl, allowtransparency: "true" });
   label(composeFrame, "typeHere", "title");
-  const micBtn = h("button", "mic", { type: "button" }, "🎤");
-  bind(() => micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart")));
+  // The microphone button and the live words live inside the typing box (A1).
   const foot = h("div", "foot");
   chatEl.append(
     h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatNew, chatSettings), chatClose),
     list,
-    h("div", "compose", undefined, composeFrame, ...(FEATURES.speechInput ? [micBtn] : [])),
+    h("div", "compose", undefined, composeFrame),
     foot,
   );
-  micBtn.addEventListener("click", () => toggleMic());
+
+  // The microphone badge on Tusk (E1): a small round badge with a big, unsteady-hands-friendly hit area.
+  const talkBtn = h("button", "talk", { type: "button" });
+  const talkDot = h("span", "dot", { "aria-hidden": "true" }, "🎤");
+  talkBtn.append(talkDot);
+  talkBtn.hidden = !FEATURES.speechInput;
+  bind(() => talkBtn.setAttribute("aria-label", t(lang(), conversation?.on ? "stopTalking" : "speakWithTusk")));
+  talkBtn.addEventListener("click", () => { if (conversation?.on) cb.onConversationStop(); else cb.onConversationStart(); });
+
+  // The captions bubble of a spoken conversation (F1).
+  const capsEl = h("div", "caps", { role: "status" }); capsEl.hidden = true;
 
   // settings panel
   const setEl = h("div", "panel"); setEl.hidden = true;
@@ -222,6 +303,16 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const speakChk = h("input", "", { type: "checkbox" });
   const speakTxt = h("span"); label(speakTxt, "readAloud");
   speakChk.addEventListener("change", () => changeSettings({ speakAnswers: speakChk.checked }));
+  const testVoiceBtn = h("button", "act test-voice", { type: "button" });
+  label(testVoiceBtn, "testVoice");
+  const voiceLine = h("p", "voice-line", { role: "status" });
+  voiceLine.hidden = true;
+  testVoiceBtn.addEventListener("click", () => {
+    voiceLine.hidden = false;
+    voiceLine.className = "voice-line";
+    voiceLine.textContent = "…";
+    cb.onTestVoice();
+  });
   const act = (key: I18nKey, fn: () => void) => {
     const b = h("button", "act", { type: "button" }); label(b, key);
     b.addEventListener("click", fn);
@@ -233,7 +324,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     h("div", "set", undefined,
       h("label", "f", undefined, langLabelTxt, langSel),
       h("div", "modes", { role: "radiogroup" }, modeLabelTxt, ...modeCards),
-      h("label", "toggle", undefined, speakChk, speakTxt),
+      h("div", "speak-row", undefined, h("label", "toggle", undefined, speakChk, speakTxt), testVoiceBtn),
+      voiceLine,
       act("newTopic", () => { setPanel("chat"); ctrl.clear(); hideBubble(); cb.onNewTopic(); }),
       act("hideSite", () => tuckAndHide("site")),
       act("hideHour", () => tuckAndHide("hour")),
@@ -241,7 +333,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     ),
   );
 
-  layer.append(dim, hl, askFrame, bubbleEl, chatEl, setEl, tusk, listenEl);
+  layer.append(dim, hl, askFrame, bubbleEl, chatEl, setEl, tusk, listenEl, capsEl, talkBtn);
 
   // keep keystrokes and Escape inside the overlay away from the page
   for (const ev of ["keydown", "keyup", "keypress"] as const) {
@@ -261,14 +353,17 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     binds.forEach((f) => f());
     langSel.value = settings.language;
     speakChk.checked = settings.speakAnswers;
+    voiceLine.hidden = true;
     modeCards.forEach((c) => c.setAttribute("aria-checked", String(c.dataset.mode === settings.mode)));
     renderChat();
     renderBubble();
+    renderConversation();
     layout();
   }
 
   // ---------- panels ----------
   function setPanel(p: Panel) {
+    const openedChat = p === "chat" && panel !== "chat";
     panel = p;
     chatEl.hidden = p !== "chat";
     setEl.hidden = p !== "settings";
@@ -278,7 +373,10 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       renderChat();
       scrollDown();
       composeFrame.focus(); // the person just asked for the chat; the frame hands focus to its text box
+      postCompose(); // the typing box may have loaded after the last microphone update
+      if (openedChat) playOnce("hello");
     }
+    applyMic();
     layout();
   }
   function closeTransient() {
@@ -297,9 +395,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     applyMic();
   }
   function applyMic() {
-    micBtn.classList.toggle("on", listening);
-    micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart"));
-    listenEl.hidden = !listening;
+    // The chat's typing box (A1) shows the microphone and the hints itself; the floating bubble is
+    // for listening started elsewhere. A spoken conversation shows captions instead.
+    listenEl.hidden = !listening || panel === "chat" || !!conversation?.on;
     const paused = micPhase === "paused";
     listenTxt.textContent = t(lang(), paused ? "micPausedTitle" : micPhase === "transcribing" ? "transcribing"
       : micPhase === "starting" ? "micStarting" : "listening");
@@ -311,7 +409,53 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     micSwitch.disabled = micPhase === "transcribing" || micPhase === "starting";
     stopBtn.disabled = micPhase === "transcribing";
     listenEl.classList.toggle("paused", paused);
+    postCompose();
     layout();
+  }
+
+  /** Tells the typing-box frame about the microphone (A1): live words, phase and progress. */
+  function postCompose() {
+    const w = composeFrame.contentWindow;
+    if (!w) return;
+    try {
+      w.postMessage({ __littletusk: "mic", listening, phase: micPhase, progress: micProgress, text: speechText }, "*");
+    } catch { /* the frame is not ready */ }
+  }
+  composeFrame.addEventListener("load", () => postCompose());
+
+  // ---------- the spoken conversation (E1 + F1) ----------
+  function renderConversation() {
+    const on = !!conversation?.on;
+    talkBtn.classList.toggle("on", on);
+    talkDot.textContent = on ? "■" : "🎤";
+    talkBtn.setAttribute("aria-label", t(lang(), on ? "stopTalking" : "speakWithTusk"));
+    capsEl.hidden = !on;
+    if (!on || !conversation) {
+      capsEl.replaceChildren();
+      applyMic();
+      return;
+    }
+    const c = conversation;
+    const kids: HTMLElement[] = [];
+    if (c.you) kids.push(h("div", "cap-line", undefined, h("b", "who", undefined, t(lang(), "youSaid")), " " + c.you));
+    if (c.tusk) kids.push(h("div", "cap-line", undefined, h("b", "who", undefined, t(lang(), "tuskSaid")), " " + c.tusk));
+    const status = c.phase === "speaking" ? t(lang(), "capSpeaking")
+      : c.phase === "thinking" ? t(lang(), "capThinking")
+      : c.phase === "starting" ? t(lang(), "capStarting") : t(lang(), "capListening");
+    kids.push(h("div", "cap-status", undefined, status + (c.phase === "starting" && c.progress && c.progress !== "…" ? " " + c.progress : "")));
+    if (c.phase === "starting") {
+      const bar = h("div", "bar");
+      const fill = h("i");
+      if (c.progress && /^\d+%$/.test(c.progress)) fill.style.width = c.progress;
+      else bar.classList.add("indeterminate");
+      bar.append(fill);
+      kids.push(bar);
+    }
+    const stop = h("button", "btn stop", { type: "button" }, "■ " + t(lang(), "stopTalking"));
+    stop.addEventListener("click", () => cb.onConversationStop());
+    kids.push(h("div", "cap-actions", undefined, stop));
+    capsEl.replaceChildren(...kids);
+    applyMic();
   }
 
   // ---------- chat rendering ----------
@@ -479,7 +623,18 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   function layout() {
     if (destroyed) return;
     const p = tuskPos();
+    const pos = `${Math.round(p.x)},${Math.round(p.y)}`;
+    if (lastPos && pos !== lastPos && !tusk.classList.contains("dragging")) {
+      tusk.classList.add("walking");
+      clearTimeout(walkTimer);
+      walkTimer = setTimeout(() => tusk.classList.remove("walking"), WALK_MS);
+    }
+    lastPos = pos;
     put(tusk, p.x, p.y);
+    if (!talkBtn.hidden) {
+      // E1: a 48 px hit area hanging off Tusk's lower right, the round badge inside it.
+      put(talkBtn, clamp(p.x + S - 22, 4, Math.max(4, vw() - 48 - 4)), clamp(p.y + S - 20, 4, Math.max(4, vh() - 48 - 4)));
+    }
     const pointing = !!tuskTarget;
     tusk.classList.toggle("pointing", pointing);
     flipEl.classList.toggle("left", pointing && tuskTarget!.flip);
@@ -515,7 +670,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
 
     // panels
     if (!chatEl.hidden) placePanel(chatEl, 380, 540);
-    if (!setEl.hidden) placePanel(setEl, 340, 660);
+    if (!setEl.hidden) placePanel(setEl, 340, 700);
     const panelBox = !chatEl.hidden ? boxRect(chatEl) : !setEl.hidden ? boxRect(setEl) : null;
     if (panelBox) avoid.push(panelBox);
 
@@ -526,6 +681,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     }
     placeBubbleLike(bubbleEl, avoid, prefer, mark?.cont ? [mark.cont] : []);
     placeBubbleLike(listenEl, avoid);
+    placeBubbleLike(capsEl, avoid);
   }
 
   /** Where Tusk should stand to point at a rect: beside it, never on top of it. */
@@ -626,7 +782,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   tusk.addEventListener("pointercancel", endDrag);
   tusk.addEventListener("click", () => {
     if (suppressClick) return;
-    setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat
+    setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat (and greets with a hello mood)
   });
   window.addEventListener("resize", onResize);
   function onResize() { lastMarkKey = ""; layout(); }
@@ -658,23 +814,51 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const ctrl: OverlayController = {
     setView(v) {
       view = v;
+      moodsFromView(v);
       renderChat();
       if (panel === "chat") scrollDown();
       popNewTusk(v);
       viewSeen = true;
     },
     setSettings(s) { settings = { ...s }; applySettings(); },
-    setMic(level, l, ph, progress) {
+    setMic(level, l, ph, progress, text) {
       listening = l;
       if (ph) micPhase = ph;
       else if (!l) micPhase = "listening";
-      micProgress = ph === "transcribing" ? progress : undefined;
+      micProgress = ph === "transcribing" || ph === "starting" ? progress : undefined;
+      if (text !== undefined) speechText = text;
+      else if (!l || ph === "starting") speechText = ""; // a new session starts with no stale words
+      micLive = l && micPhase !== "transcribing";
+      applyMood();
       phase += 1;
       waveBars.forEach((b, i) => {
         const amp = 0.35 + 0.65 * Math.abs(Math.sin(phase * 0.9 + i * 0.8));
         b.style.height = `${Math.round(8 + clamp(level, 0, 1) * 36 * amp)}px`;
       });
       applyMic();
+    },
+    setConversation(state) {
+      conversation = state && state.on ? state : null;
+      renderConversation();
+    },
+    setMood(m) {
+      if (m === "hello" || m === "done" || m === "sorry") { playOnce(m); return; }
+      clearTimeout(oneShotTimer); oneShot = null;
+      forced = m === "idle" ? null : m;
+      applyMood();
+    },
+    setSpeaking(on) { speakingOn = on; applyMood(); },
+    setVoiceTest(result) {
+      if (!result) { voiceLine.hidden = true; return; }
+      voiceLine.hidden = false;
+      if ("none" in result) {
+        voiceLine.className = "voice-line warn";
+        voiceLine.textContent = t(lang(), "voiceNone", { language: LANGUAGE_NAMES[lang()] ?? lang() });
+      } else {
+        voiceLine.className = "voice-line ok";
+        voiceLine.textContent = t(lang(), result.voice.online ? "voiceHeardOnline" : "voiceHeardLocal", { name: result.voice.name });
+      }
+      layout();
     },
     say(text) { showBubble({ text, src: "say" }, 12000); },
     pointAt(el, say) { startMark(el, "point", say, "point"); },
@@ -695,7 +879,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     },
     destroy() {
       destroyed = true;
-      clearTimeout(bubbleTimer);
+      clearTimeout(bubbleTimer); clearTimeout(oneShotTimer); clearTimeout(walkTimer);
       if (rafId && typeof cancelAnimationFrame === "function") cancelAnimationFrame(rafId);
       document.removeEventListener("keydown", onDocKey);
       document.removeEventListener("pointerdown", onDocPointer, true);

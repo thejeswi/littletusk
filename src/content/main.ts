@@ -1,5 +1,5 @@
 // Content script: the overlay (Tusk) and the page tools, wired to the service worker.
-import type { ChatView, FromContent, OverlayInfo, PageCommand, PageResult, Settings, ToAgent, ToContent } from "../shared/protocol";
+import type { ChatView, FromContent, OverlayInfo, PageCommand, PageResult, Settings, ToAgent, ToContent, VoiceTest } from "../shared/protocol";
 import { DEFAULT_SETTINGS } from "../shared/protocol";
 import { publicSettings } from "../shared/settings";
 import { t, type I18nKey } from "../shared/i18n";
@@ -134,6 +134,10 @@ function main() {
         onTuck: (scope) => void send({ to: "sw", type: "tuck", scope }),
         onOpenFamilySettings: () => void send({ to: "sw", type: "open-setup" }),
         onAcceptOverlayHelp: (id) => void acceptHelp(id),
+        onConversationStart: () => void send({ to: "agent", type: "conversation-start" }),
+        onConversationStop: () => void send({ to: "agent", type: "conversation-stop" }),
+        onTestVoice: () => void send<VoiceTest>({ to: "sw", type: "test-voice", lang: settings?.language ?? "en" })
+          .then((r) => ctrl?.setVoiceTest(r ?? null)),
       },
       s,
     );
@@ -204,7 +208,13 @@ function main() {
         apply(msg.settings);
         return false;
       case "mic":
-        ctrl?.setMic(msg.level, msg.listening, msg.phase, msg.progress);
+        ctrl?.setMic(msg.level, msg.listening, msg.phase, msg.progress, msg.text);
+        return false;
+      case "conversation":
+        ctrl?.setConversation(msg.state);
+        return false;
+      case "speaking":
+        ctrl?.setSpeaking(msg.on);
         return false;
       case "page":
         onPage(msg.cmd).then(sendResponse, (e) => sendResponse({ ok: false, error: `ERROR: ${String((e as Error)?.message ?? e)}` }));

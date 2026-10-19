@@ -31,7 +31,7 @@ for (const f of files.filter((x) => x.endsWith(".html"))) {
 // chunk and copied to wasm/):  typeof globalThis=="object" ? globalThis : Function("return this")()
 // Every Chrome that can run this extension (116+) has globalThis, so the Function branch is never taken, and
 // under our CSP (no 'unsafe-eval') it could not run anyway. Only that exact snippet is allowed; any other
-// eval( or Function( string is a failure. Whisper itself is switched off (FEATURES.speechInput).
+// eval( or Function( string is a failure. Whisper is used when the browser has no on-device listener.
 const Q = "[`\"']";
 const EMSCRIPTEN_GLOBAL_FALLBACK = new RegExp(
   `(?:typeof globalThis\\s*==\\s*${Q}object${Q}|${Q}object${Q}\\s*==\\s*typeof globalThis)\\s*\\?\\s*globalThis\\s*:\\s*Function\\(\\s*${Q}return this${Q}\\s*\\)\\(\\)`, "g");

@@ -1,51 +1,53 @@
-import { test, expect } from "./fixtures";
-import { FEATURES } from "../../src/shared/features";
+import { test, expect, speechBuild } from "./fixtures";
 
-test.skip(!FEATURES.speechInput, "Speaking to Tusk is switched off (src/shared/features.ts).");
+test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:speech builds the speech variant).");
 
-// Chromium's fake microphone plays a beep, so there is always something to hear.
-test.use({ extraArgs: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
-
-test("listening bubble: labelled microphone switch turns listening off and on, Stop and send ends it", async ({ context, demoUrl, tusk }) => {
+// The test build has a scripted microphone (src/speech/faux.ts): no audio, no model download, no network.
+test("@speech chat microphone: live words, the two-line hints, and nothing sent until Send", async ({ context, demoUrl, tusk }) => {
   await tusk.configure();
+  await tusk.set("__speech_fake", true);
+  await tusk.set("__speech_text", "where do I log in");
+  await tusk.set("__speech_partial", "where do I");
   const page = await context.newPage();
   await page.goto(`${demoUrl}/blank.html`);
   await page.locator("button.tusk").click();
-  await page.locator(".compose .mic").click(); // the microphone button in the chat
+  const box = page.frameLocator(".compose-frame");
+  const mic = box.locator("#m");
 
-  const listen = page.locator(".listen");
-  await expect(listen.locator(".ltitle")).toHaveText("I'm listening…", { timeout: 15_000 });
-  const sw = listen.getByRole("switch");
-  await expect(sw).toHaveAttribute("aria-checked", "true");
-  await expect(sw).toContainText("Microphone");
-  await expect(sw).toContainText("On");
-  const stop = listen.getByRole("button", { name: "Stop and send" });
-  await expect(stop).toBeVisible();
-  // Started from the open chat, the listening bubble is on top: a click on Stop lands on Stop.
-  const onTop = await page.evaluate(() => {
-    const root = (document.querySelector("[data-littletusk=overlay]") as HTMLElement).shadowRoot!;
-    for (const sel of [".listen .btn.stop", ".listen .switch"]) {
-      const el = root.querySelector(sel) as HTMLElement;
-      const r = el.getBoundingClientRect();
-      const at = root.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (!(at === el || el.contains(at))) return `${sel} covered by ${at?.className}`;
-    }
-    return "on top";
-  });
-  expect(onTop).toBe("on top");
+  await mic.click();
+  await expect(box.locator("#hint")).toBeVisible();
+  await expect(box.locator("#h1")).toHaveText("🎤 Listening… your words appear in the box.");
+  await expect(box.locator("#h2")).toHaveText("Check them, then press Send.");
+  await expect(box.locator("#t")).toHaveValue("where do I");
+  await expect(mic).toHaveAttribute("aria-pressed", "true");
+  await expect(mic).toHaveText("■");
+  // A1: nothing goes out while the person speaks.
+  await expect(page.locator(".panel .list .msg.user")).toHaveCount(0);
 
-  await sw.click();
-  await expect(sw).toHaveAttribute("aria-checked", "false");
-  await expect(sw).toContainText("Off");
-  await expect(listen.locator(".ltitle")).toHaveText(/microphone is off/i);
-  await page.waitForTimeout(500);
-  await expect(listen.locator(".ltitle")).toHaveText(/microphone is off/i); // stays off: no level updates turn it back on
+  await mic.click();
+  await expect(box.locator("#t")).toHaveValue("where do I log in");
+  await expect(box.locator("#h1")).toHaveText("Is this right? Change it if needed,");
+  await expect(box.locator("#h2")).toHaveText("then press Send.");
+  await expect(mic).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".panel .list .msg.user")).toHaveCount(0);
 
-  await sw.click();
-  await expect(sw).toHaveAttribute("aria-checked", "true");
-  await expect(listen.locator(".ltitle")).toHaveText("I'm listening…");
+  await box.locator("#s").click();
+  await expect(page.locator(".panel .list .msg.user")).toContainText("where do I log in");
+  await expect(box.locator("#t")).toHaveValue("");
+  await expect(box.locator("#hint")).toBeHidden();
+});
 
-  await stop.click();
-  // The beep counts as sound, so Tusk starts writing it down (the model download is not waited for here).
-  await expect(listen.locator(".ltitle")).toHaveText(/writing down/i, { timeout: 10_000 });
+test("@speech Send while still listening stops first, then sends the finished words", async ({ context, demoUrl, tusk }) => {
+  await tusk.configure();
+  await tusk.set("__speech_fake", true);
+  await tusk.set("__speech_text", "please show me the menu");
+  await tusk.set("__speech_partial", "please show");
+  const page = await context.newPage();
+  await page.goto(`${demoUrl}/blank.html`);
+  await page.locator("button.tusk").click();
+  const box = page.frameLocator(".compose-frame");
+  await box.locator("#m").click();
+  await expect(box.locator("#t")).toHaveValue("please show");
+  await box.locator("#s").click();
+  await expect(page.locator(".panel .list .msg.user")).toContainText("please show me the menu");
 });

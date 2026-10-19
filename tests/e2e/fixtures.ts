@@ -8,7 +8,9 @@ import type { AddressInfo } from "node:net";
 
 const root = resolve(import.meta.dirname, "../..");
 // End-to-end tests run the test build (npm run build:e2e): same code plus the scripted fake model.
-const dist = join(root, "dist-e2e");
+// LITTLETUSK_SPEECH=1 selects the speech-on variant (npm run build:e2e:speech).
+export const speechBuild = process.env.LITTLETUSK_SPEECH === "1";
+const dist = join(root, speechBuild ? "dist-e2e-speech" : "dist-e2e");
 const demoDir = join(root, "demo");
 const types: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json" };
 

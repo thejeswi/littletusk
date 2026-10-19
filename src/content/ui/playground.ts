@@ -1,7 +1,7 @@
 // Test hook: main.ts calls playground(ctrl) when the page has <meta name="littletusk-playground">.
 // It fills the overlay with fake data and wires any [data-tusk-demo] element on the page:
-//   data-tusk-demo="point|spotlight|ask|offer|say|clear|view|busy"  data-target="#selector"  data-say="text"
-import type { OverlayController } from "./index";
+//   data-tusk-demo="point|spotlight|ask|offer|say|clear|view|busy|mood"  data-target="#selector"  data-say="text"  data-mood="listening|..."
+import type { Mood, OverlayController } from "./index";
 
 export function playground(ctrl: OverlayController): void {
   if (!document.querySelector('meta[name="littletusk-playground"]')) return;
@@ -25,7 +25,8 @@ export function playground(ctrl: OverlayController): void {
     const kind = src.getAttribute("data-tusk-demo");
     const target = document.querySelector(src.getAttribute("data-target") ?? "");
     const say = src.getAttribute("data-say") ?? "Here it is.";
-    if (kind === "clear") ctrl.clear();
+    if (kind === "mood") ctrl.setMood((src.getAttribute("data-mood") ?? "idle") as Mood);
+    else if (kind === "clear") ctrl.clear();
     else if (kind === "say") ctrl.say(say);
     else if (kind === "view") ctrl.setView(view(false));
     else if (kind === "busy") ctrl.setView(view(true));

@@ -6,10 +6,11 @@ import { readFile, mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, normalize } from "node:path";
 import type { AddressInfo } from "node:net";
-import { test as e2e, expect, type Tusk } from "../e2e/fixtures";
+import { test as e2e, expect, speechBuild, type Tusk } from "../e2e/fixtures";
 
 const root = resolve(import.meta.dirname, "../..");
-const dist = join(root, "dist-e2e");
+// The screenshot build follows the speech variant (npm run screenshots builds dist-e2e-speech), like production.
+const dist = join(root, speechBuild ? "dist-e2e-speech" : "dist-e2e");
 const out = join(root, "docs/screenshots");
 const MAX_BYTES = 400 * 1024;
 
