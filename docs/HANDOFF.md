@@ -1,7 +1,7 @@
 # Handoff: speech input, voice check and Tusk's moods (work in progress)
 
 > **Status (2026-10-19):** finished. Speech is on, Tusk's moods are in, and the full suites pass. Merged to `main` and released as **v0.2.0**; this file stays as the record of the work.
-> **Follow-up (v0.2.1):** the open question is answered. An offscreen document cannot get microphone permission, so the speech engine now runs in the composing iframe (an extension page). The pack downloads normally in branded Chrome; Chrome for Testing cannot fetch the SODA components.
+> **Follow-up (v0.2.1):** the open question is answered. An offscreen document cannot get microphone permission, so the speech engine now runs in the composing iframe (an extension page). The pack downloads normally in branded Chrome; Chrome for Testing cannot fetch the SODA components. **v0.2.2:** Chrome denies the on-device recognizer in a cross-origin iframe, so the composing frame uses Whisper (with download progress); the browser listener still runs in a top-level extension page.
 
 Branch `wip/speech-and-moods`, 2026-10-19. `main` is stable and released (v0.1.0). This branch holds
 unfinished work, stopped mid-way to continue on another machine. Typecheck passed at the stop; the

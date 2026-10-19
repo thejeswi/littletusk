@@ -13,6 +13,7 @@ export interface SpeechOptions {
 export function createSpeech(opts: SpeechOptions) {
   let worker: Worker | null = null;
   let ready: Promise<void> | null = null;
+  let workerReady = false; // the model weights are in place
   let nextId = 1;
   const pending = new Map<number, { resolve(t: string): void; reject(e: Error): void }>();
 
@@ -23,15 +24,15 @@ export function createSpeech(opts: SpeechOptions) {
       worker!.onmessage = (e: MessageEvent<WorkerOut>) => {
         const m = e.data;
         // Progress never overrides listening/paused; while writing down it shows how far the download is.
-        if (m.type === "progress") { if (transcribingNow) opts.onState("transcribing", `${m.percent}%`); else if (!session) opts.onState("loading", `${m.percent}%`); }
-        else if (m.type === "ready") resolve();
+        if (m.type === "progress") { if (transcribingNow) opts.onState("transcribing", `${m.percent}%`); else if (!workerReady) opts.onState("loading", `${m.percent}%`); }
+        else if (m.type === "ready") { workerReady = true; resolve(); }
         else if (m.type === "result") { pending.get(m.id)?.resolve(m.text); pending.delete(m.id); }
         else if (m.type === "error") {
           if (m.id !== undefined) { pending.get(m.id)?.reject(new Error(m.message)); pending.delete(m.id); }
-          else { reject(new Error(m.message)); ready = null; worker?.terminate(); worker = null; }
+          else { reject(new Error(m.message)); ready = null; workerReady = false; worker?.terminate(); worker = null; }
         }
       };
-      worker!.onerror = (e) => { reject(new Error(e.message || "worker failed")); ready = null; };
+      worker!.onerror = (e) => { reject(new Error(e.message || "worker failed")); ready = null; workerReady = false; };
       const init: WorkerIn = { type: "init", wasmBase: opts.wasmBase };
       worker!.postMessage(init);
     });
@@ -236,6 +237,7 @@ export function createSpeech(opts: SpeechOptions) {
     worker?.terminate();
     worker = null;
     ready = null;
+    workerReady = false;
     pending.forEach((p) => p.reject(new Error("disposed")));
     pending.clear();
   }
