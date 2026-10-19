@@ -124,6 +124,7 @@ function renderHint(): void {
   micBtn.textContent = listening ? "■" : "🎤";
   micBtn.setAttribute("aria-pressed", String(listening));
   micBtn.setAttribute("aria-label", t(lang, listening ? "micStop" : "micStart"));
+  reportHeight();
 }
 
 function sendToAgent(msg: ToAgent): void {
