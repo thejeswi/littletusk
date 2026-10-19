@@ -39,9 +39,9 @@ The chat also works in a narrow window, for example on a small laptop or a phone
 
 ### Talk to Tusk
 
-Press the microphone in the chat and talk: your words appear in the text box, with a two-line hint, and nothing is sent until you press Send. The microphone button turns red with a stop square while it listens.
+A family member can turn talking on in Family settings (off by default). Then press the microphone in the chat and talk: your words appear in the two-line text box, with a hint, and nothing is sent until you press Send. The microphone button turns red with a stop square while it listens.
 
-A family member can turn on the round microphone badge on Tusk (Family settings, off by default); pressing it starts a hands-free conversation, like a phone call. Tusk listens, sends what you said when you pause, says its answer aloud, then listens again. The words show as captions ("You: …", "Tusk: …") with a red Stop talking button. It ends on Stop talking, the badge, a New chat, or 20 seconds of silence. A transcript that is empty, very short or in the wrong writing system is dropped with "Sorry, I didn't catch that." instead of being sent.
+The same setting shows the round microphone badge on Tusk; pressing it starts a hands-free conversation, like a phone call. Tusk listens, sends what you said when you pause, says its answer aloud, then listens again. The words show as captions ("You: …", "Tusk: …") with a red Stop talking button. It ends on Stop talking, the badge, a New chat, or 20 seconds of silence. A transcript that is empty, very short or in the wrong writing system is dropped with "Sorry, I didn't catch that." instead of being sent.
 
 Speech is understood on your computer: first by the browser's own on-device listener (the first use of a language may download a small listening pack, with a progress bar), then by Tusk's open Whisper model in WebAssembly if needed. In Family settings, a family member can allow the browser's online listener as a backup; it is off by default, and Tusk's own settings do not offer it.
 
