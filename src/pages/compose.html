@@ -13,12 +13,13 @@
   /* Height follows the content: the chat sizes this frame to fit, so there is no empty strip
      under the send bar. compose.ts reports the measured height to the overlay. */
   #wrap { display: flex; flex-direction: column; gap: 4px; padding: 4px; box-sizing: border-box; }
-  form { display: flex; gap: 8px; align-items: center; }
-  input {
-    flex: 1; min-width: 0; min-height: 48px; box-sizing: border-box; padding: 8px 16px;
-    border: 2px solid #99bbbb; border-radius: 26px; background: #fff; color: inherit; font: inherit;
+  form { display: flex; gap: 8px; align-items: flex-end; }
+  textarea {
+    flex: 1; min-width: 0; min-height: 64px; box-sizing: border-box; padding: 8px 16px;
+    border: 2px solid #99bbbb; border-radius: 20px; background: #fff; color: inherit; font: inherit;
+    line-height: 1.35; resize: none;
   }
-  input:focus { outline: 3px solid #ffb703; outline-offset: 1px; border-color: #2f9e6d; }
+  textarea:focus { outline: 3px solid #ffb703; outline-offset: 1px; border-color: #2f9e6d; }
   button {
     min-height: 48px; padding: 8px 16px; border-radius: 24px; border: 2px solid #2f9e6d;
     background: #2f9e6d; color: #fff; font: inherit; font-weight: 600; cursor: pointer;
@@ -40,8 +41,8 @@
 <body>
 <div id="wrap">
   <form id="f" autocomplete="off">
-    <input id="t" type="text" enterkeyhint="send" spellcheck="true">
-    <button id="m" type="button" aria-pressed="false">🎤</button>
+    <textarea id="t" rows="2" enterkeyhint="send" spellcheck="true"></textarea>
+    <button id="m" type="button" aria-pressed="false" hidden>🎤</button>
     <button id="s" type="submit">Send</button>
   </form>
   <div id="hint" role="status" aria-live="polite" hidden>

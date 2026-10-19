@@ -13,7 +13,7 @@ import type { Language, MicPhase, SpeechEvent, SpeechHostCommand, ToAgent } from
 import { SETTINGS_KEY, type Settings } from "../shared/protocol";
 
 const form = document.getElementById("f") as HTMLFormElement;
-const input = document.getElementById("t") as HTMLInputElement;
+const input = document.getElementById("t") as HTMLTextAreaElement;
 const sendBtn = document.getElementById("s") as HTMLButtonElement;
 const micBtn = document.getElementById("m") as HTMLButtonElement;
 const hint = document.getElementById("hint") as HTMLElement;
@@ -29,6 +29,7 @@ let progress: string | undefined;
 let sendAfterStop = false;
 let micBusy = false; // mic-start was sent, the engine is not answering yet
 let settings: Settings | null = null;
+let talkToTusk = false; // the family turns the microphone on; off by default
 let engine: ReturnType<typeof createSpeechAuto> | null = null;
 
 // The microphone runs here, in an extension page, because an offscreen document cannot get
@@ -52,7 +53,7 @@ async function startEngine(lang: Language): Promise<void> {
 }
 
 function runSpeechCommand(cmd: SpeechHostCommand): void {
-  if (!FEATURES.speechInput) return;
+  if (!FEATURES.speechInput || !talkToTusk) return;
   if (cmd.op === "start") void startEngine(cmd.lang);
   else if (cmd.op === "stop") void engine?.stop();
   else engine?.pause(cmd.paused);
@@ -84,8 +85,11 @@ function applyLanguage(next: Language): void {
 }
 
 async function loadLanguage(): Promise<void> {
-  const stored = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY] as { language?: Language } | undefined;
+  const stored = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY] as { language?: Language; talkToTusk?: boolean } | undefined;
   applyLanguage(stored?.language ?? "en");
+  talkToTusk = stored?.talkToTusk === true;
+  micBtn.hidden = !FEATURES.speechInput || !talkToTusk;
+  if (!talkToTusk) { hint.hidden = true; }
 }
 
 /** A new listening session starts with an empty box; afterwards the words stay for checking. */
@@ -154,6 +158,12 @@ function stopListening(): void {
   sessionWords = false;
   renderHint();
 }
+
+input.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+  e.preventDefault();
+  form.requestSubmit();
+});
 
 micBtn.addEventListener("click", () => {
   if (listening) stopListening();

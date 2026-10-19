@@ -39,16 +39,20 @@ test("@speech the microphone badge starts a hands-free conversation with caption
   await expect(badge).not.toHaveClass(/on/);
 });
 
-test("@speech the talk badge stays away until a grown-up turns talking on", async ({ context, demoUrl, tusk }) => {
+test("@speech the talk badge and chat microphone stay away until a grown-up turns talking on", async ({ context, demoUrl, tusk }) => {
   await tusk.configure(); // talkToTusk is off by default
   const page = await context.newPage();
   await page.goto(`${demoUrl}/blank.html`);
   await expect(page.locator("button.tusk")).toBeVisible();
   await expect(page.locator("button.talk")).toBeHidden();
-  // The family settings turn it on: the next page load shows the badge under Tusk.
+  await page.locator("button.tusk").click();
+  await expect(page.frameLocator(".compose-frame").locator("#m")).toBeHidden();
+  // The family settings turn it on: the next page load shows the badge under Tusk and the chat microphone.
   await tusk.configure({ talkToTusk: true });
   await page.reload();
   await expect(page.locator("button.talk")).toBeVisible();
+  await page.locator("button.tusk").click();
+  await expect(page.frameLocator(".compose-frame").locator("#m")).toBeVisible();
 });
 
 test("@speech New chat ends a spoken conversation", async ({ context, demoUrl, tusk }) => {

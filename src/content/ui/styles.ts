@@ -166,7 +166,7 @@ button.talk:focus-visible .dot{outline:3px solid #ffb703;outline-offset:3px}
 .compose{display:flex;gap:8px;padding:10px 8px;border-top:1px solid #d3dde3;align-items:center}
 /* The typing frame reports its own content height (compose.ts), so the chat has no dead space
    under the send bar. 60px is only what it looks like before the first measurement: text box alone. */
-.compose-frame{flex:1;min-width:0;height:60px;border:0;background:transparent;color-scheme:normal}
+.compose-frame{flex:1;min-width:0;height:76px;border:0;background:transparent;color-scheme:normal}
 .mic{width:52px;height:52px;border-radius:50%;border:2px solid #99bbbb;background:#fff;font-size:24px;flex:none;padding:0}
 .mic.on{background:#2f9e6d;border-color:#2f9e6d}
 .foot{padding:6px 14px 10px;font-size:13px;color:#52606d;text-align:center}

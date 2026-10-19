@@ -3,7 +3,7 @@ import { test, expect, speechBuild } from "./fixtures";
 test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:speech builds the speech variant).");
 
 test("@speech Speak without microphone permission opens the permission window and says why", async ({ context, demoUrl, tusk }) => {
-  await tusk.configure();
+  await tusk.configure({ talkToTusk: true });
   // The scripted microphone reports a missing permission, like an offscreen document that cannot ask.
   await tusk.set("__speech_fake", true);
   await tusk.set("__speech_error", "MIC_PERMISSION");

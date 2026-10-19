@@ -4,7 +4,7 @@ test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:spee
 
 // The test build has a scripted microphone (src/speech/faux.ts): no audio, no model download, no network.
 test("@speech chat microphone: live words, the two-line hints, and nothing sent until Send", async ({ context, demoUrl, tusk }) => {
-  await tusk.configure();
+  await tusk.configure({ talkToTusk: true });
   await tusk.set("__speech_fake", true);
   await tusk.set("__speech_text", "where do I log in");
   await tusk.set("__speech_partial", "where do I");
@@ -44,7 +44,7 @@ test("@speech chat microphone: live words, the two-line hints, and nothing sent 
 });
 
 test("@speech Send while still listening stops first, then sends the finished words", async ({ context, demoUrl, tusk }) => {
-  await tusk.configure();
+  await tusk.configure({ talkToTusk: true });
   await tusk.set("__speech_fake", true);
   await tusk.set("__speech_text", "please show me the menu");
   await tusk.set("__speech_partial", "please show");
