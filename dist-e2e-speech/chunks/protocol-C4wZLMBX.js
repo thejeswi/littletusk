@@ -1,0 +1,1 @@
+var e={language:`en`,mode:`show`,provider:`anthropic`,apiKey:``,model:`claude-haiku-5-5`,strongModel:`claude-sonnet-5-5`,monthlyLimit:10,currency:`EUR`,speakAnswers:!1,tuckedSites:{},tuckedUntil:0,setupDone:!1},t=`settings`;function n(e){try{let t=new URL(e);return t.protocol===`http:`||t.protocol===`https:`}catch{return!1}}export{t as n,n as r,e as t};

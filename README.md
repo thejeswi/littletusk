@@ -8,6 +8,8 @@ Little Tusk is a Chrome extension. A small baby elephant called Tusk floats in t
 
 ![Tusk waiting in the corner of a shop page](docs/screenshots/01-tusk-on-page.png)
 
+A tour of every feature, with screenshots and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
+
 ## Why
 
 Most of the trouble people have online is small and silly. A popup that will not close because the little cross is nearly invisible. A cookie banner that covers the page. A button that is called something other than what you expect. You wanted to "pay for the electricity", and the page wants a "meter reading".
@@ -20,8 +22,6 @@ People often use the wrong words for what they mean, and that is fine. Tusk trea
 
 Tusk lives in the corner of the page. You can drag it anywhere, and you can hide it for this site or for an hour with one click. Click Tusk and the chat opens. You type there, and Settings is at the top of the chat. The typing box keeps working even on sites whose cookie dialogs grab the keyboard.
 
-![A click on Tusk opens the chat](docs/screenshots/02-chat-open.png)
-
 ### "Show me how" or "Look after me"
 
 - **Show me how.** Tusk stays quiet until you click it. Then it points, explains and waits for you to click. If you get stuck twice on the same step, it offers: "Shall I do it for you?"
@@ -31,19 +31,11 @@ Tusk lives in the corner of the page. You can drag it anywhere, and you can hide
 
 When you are really stuck, Tusk can dim the page and light up the one thing that matters.
 
-![Spotlight on the meter reading field](docs/screenshots/05-spotlight.png)
-
-![Look after me offers to close a cookie banner](docs/screenshots/07-look-after-cookies.png)
-
 ### Chat with a log of what Tusk did
 
 Type your question. Between the messages, Tusk lists in plain words what it did: "Looked at the page", "Pointed at the cross", "Closed the popup". You always see what happened on your screen.
 
-![A chat with the list of actions](docs/screenshots/04-chat-actions.png)
-
 The chat also works in a narrow window, for example on a small laptop or a phone-sized window.
-
-![The chat in a 360 pixel wide window](docs/screenshots/13-narrow.png)
 
 ### Speak to Tusk (switched off for now)
 
@@ -61,21 +53,13 @@ These rules are enforced in code, not only in the instructions to the model.
 
 ![Tusk spots a scam email on its own](docs/screenshots/14-scam-warning.png)
 
-![Tusk asks before buying](docs/screenshots/06-confirm.png)
-
-![Tusk marks a password field and asks you to type it yourself](docs/screenshots/08-secret-field.png)
-
 ### Four languages
 
 English, Deutsch, Español and English (India). Everything follows the setting: the buttons, Tusk's answers and its voice. The page can be in another language: a German shop is explained to you in your own language. English (India) uses short, plain sentences and familiar words such as UPI, net banking and OTP.
 
-![The same chat in Spanish, on a German page](docs/screenshots/10-languages.png)
-
 ### Settings and a spending limit
 
 The person can change language, mode and "read answers aloud", start a new topic, or hide Tusk. The family settings (provider, key, models, spending limit) sit one click away.
-
-![The settings popover](docs/screenshots/09-settings.png)
 
 Tusk uses a cheap model for everyday turns and reads the page as text, not screenshots. A monthly spending limit is set at setup, shown in the chat, and enforced in code: at the limit, Tusk stops politely.
 
@@ -90,8 +74,6 @@ This is the "grandchild flow": you set Little Tusk up once, on their computer.
      ![The family settings page](docs/screenshots/11-family-settings.png)
 
    - **Setup link by email.** On the family settings page, make a link and email it to yourself or to them. Opening it on their computer asks "Set up Little Tusk on this computer?" and saves the settings after one click.
-
-     ![The setup link asks before saving anything](docs/screenshots/12-setup-link.png)
 
 About the setup link: the settings travel in the part of the link after the `#`. Browsers never send that part to a server, so nobody but the two computers sees the key. Still, please use a separate key that has a spending limit set at the provider, and delete the email afterwards.
 

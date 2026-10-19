@@ -17,7 +17,7 @@
     "scenarios:live": "npm run build:e2e && LITTLETUSK_LIVE=1 playwright test -c playwright.scenarios.config.ts",
     "check-clean": "bash scripts/check-clean.sh",
     "store-assets": "node scripts/store-assets.mjs",
-    "screenshots": "npm run build:e2e && playwright test -c playwright.screenshots.config.ts && cp docs/screenshots/03-pointing.png site/pointing.png && cp docs/screenshots/04-chat-actions.png site/chat.png",
+    "screenshots": "npm run build:e2e && playwright test -c playwright.screenshots.config.ts && node scripts/site-images.mjs",
     "check:store": "node scripts/check-store-ready.mjs"
   },
   "dependencies": {
