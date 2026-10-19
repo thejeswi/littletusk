@@ -1,0 +1,196 @@
+<h2>Speaking to Tusk: A is chosen, B, C and D are still open</h2>
+<p class="subtitle">These are mockups in Tusk's real look. Click one card in rows B, C and D, or tell me in the terminal. Mixing is fine, for example "A1 but with the Stop button from A3".</p>
+
+<style>
+  .q { margin: 26px 0 8px; }
+  .q h3 { margin: 0 0 4px; font-size: 18px; }
+  .q p { margin: 0 0 10px; color: #52606d; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+  .card { cursor: pointer; }
+  .card-body h3 { font-size: 16px; margin: 0 0 4px; }
+  .card-body p { font-size: 13.5px; margin: 0; color: #52606d; line-height: 1.45; }
+  .stage { position: relative; background: #f5f3ee; border-radius: 10px; padding: 14px; min-height: 250px; font: 15px/1.4 system-ui, sans-serif; color: #1f2933; }
+  /* Tusk's own look */
+  .panel { background: #fff; border: 2px solid #99bbbb; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.12); overflow: hidden; }
+  .head { display: flex; align-items: center; gap: 6px; padding: 7px 9px; background: #eef3f6; border-bottom: 1px solid #d3dde3; }
+  .head b { flex: 1; font-size: 15px; }
+  .hb { font-size: 11px; border: 1.5px solid #99bbbb; border-radius: 14px; padding: 2px 8px; background: #fff; white-space: nowrap; }
+  .x { font-size: 13px; padding: 0 4px; }
+  .list { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .m { padding: 6px 9px; border-radius: 12px; max-width: 88%; font-size: 13.5px; }
+  .me { align-self: flex-end; background: #e8f5ec; }
+  .tk { align-self: flex-start; background: #eceff2; }
+  .note { align-self: stretch; background: #fff8e0; border: 1px solid #e0c870; border-radius: 10px; padding: 6px 9px; font-size: 12.5px; }
+  .compose { display: flex; gap: 6px; align-items: center; padding: 7px; border-top: 1px solid #d3dde3; }
+  .tb { flex: 1; min-height: 34px; border: 2px solid #99bbbb; border-radius: 18px; padding: 6px 11px; font-size: 13px; color: #1f2933; background: #fff; display: flex; align-items: center; }
+  .tb.ph { color: #8a96a1; }
+  .tb.live { border-color: #2f9e6d; outline: 3px solid #ffb703; outline-offset: 1px; }
+  .mic { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #99bbbb; background: #fff; display: grid; place-items: center; font-size: 15px; }
+  .mic.on { background: #b42318; border-color: #b42318; color: #fff; }
+  .send { background: #2f9e6d; color: #fff; border-radius: 18px; padding: 7px 12px; font-size: 13px; font-weight: 600; }
+  .btn { display: inline-block; border-radius: 16px; padding: 5px 12px; font-size: 13px; font-weight: 600; border: 2px solid #99bbbb; background: #fff; }
+  .btn.yes { background: #2f9e6d; border-color: #2f9e6d; color: #fff; }
+  .btn.stop { background: #b42318; border-color: #b42318; color: #fff; }
+  .bubble { background: #fff; border: 2px solid #99bbbb; border-radius: 16px; padding: 10px 12px; font-size: 13.5px; box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+  .wave { display: flex; gap: 3px; align-items: center; height: 22px; margin: 6px 0; }
+  .wave i { width: 5px; background: #2f9e6d; border-radius: 3px; display: block; }
+  .sw { display: inline-flex; align-items: center; gap: 6px; border: 2px solid #99bbbb; border-radius: 16px; padding: 3px 9px; font-size: 12.5px; font-weight: 600; }
+  .track { width: 30px; height: 17px; border-radius: 9px; background: #2f9e6d; position: relative; display: inline-block; }
+  .track::after { content: ""; position: absolute; right: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hint { font-size: 12px; color: #52606d; }
+  .bar { height: 8px; border-radius: 4px; background: #e3e8ec; overflow: hidden; margin: 6px 0; }
+  .bar i { display: block; height: 100%; width: 40%; background: #2f9e6d; }
+  .tusk { position: absolute; right: 8px; bottom: 6px; width: 46px; }
+  .set { padding: 9px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+  .opt { border: 2px solid #99bbbb; border-radius: 10px; padding: 6px 8px; }
+  .opt.on { border-color: #2f9e6d; background: #eef8f2; }
+  .chk { display: inline-block; width: 15px; height: 15px; border: 2px solid #52606d; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .chk.on { background: #2f9e6d; border-color: #2f9e6d; }
+  .ok { color: #1a7f4b; font-weight: 600; } .warn { color: #b42318; font-weight: 600; }
+  .fam { background: #fff; border-radius: 12px; padding: 10px 12px; font-size: 13px; border: 1px solid #d3dde3; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="t"><ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/><ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/><circle cx="60" cy="58" r="36" fill="#b7c4cf"/><path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/><path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/><path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/><circle cx="47" cy="52" r="3" fill="#2b2b2b"/><circle cx="73" cy="52" r="3" fill="#2b2b2b"/><circle cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/><circle cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/></g>
+</defs></svg>
+
+<!-- ===================== A ===================== -->
+<div class="q"><h3>A. What speaking looks like: chosen, A1 with your wording</h3><p>The words appear in the box while the person speaks. The hint below the box is two lines now.</p></div>
+<div class="cards">
+  <div class="card selected" data-choice="A1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel">
+        <div class="head"><b>Tusk</b><span class="hb">🗑️ New chat</span><span class="hb">⚙️ Settings</span><span class="x">✕</span></div>
+        <div class="list"><div class="m tk">Hello, I'm Tusk. Click on me whenever you need help.</div></div>
+        <div class="compose"><div class="tb live">where do I log in</div><div class="mic on">■</div><div class="send">Send</div></div>
+        <div class="hint" style="padding:0 9px 8px;line-height:1.5">🎤 Listening… your words appear in the box.<br>Check them, then press Send.</div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>A1. While listening</h3><p>The microphone button turns red with a stop square. Pressing it again stops listening. Nothing is sent until the person presses Send.</p></div>
+  </div>
+  <div class="card" data-choice="A1-after" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel">
+        <div class="head"><b>Tusk</b><span class="hb">🗑️ New chat</span><span class="hb">⚙️ Settings</span><span class="x">✕</span></div>
+        <div class="list"><div class="m tk">Hello, I'm Tusk. Click on me whenever you need help.</div></div>
+        <div class="compose"><div class="tb">where do I log in</div><div class="mic">🎤</div><div class="send">Send</div></div>
+        <div class="hint" style="padding:0 9px 8px;line-height:1.5">Is this right? Change it if needed,<br>then press Send.</div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>A1. After the person stops</h3><p>The words stay in the box with a short hint. My suggestion for the second hint, same two-line style. Tell me if you want different words.</p></div>
+  </div>
+</div>
+
+<!-- ===================== B ===================== -->
+<div class="q"><h3>B. The first time: getting the "listening pack"</h3><p>Listening on the computer needs a one-time download per language. On your machine the English pack took about 9 seconds.</p></div>
+<div class="cards">
+  <div class="card" data-choice="B1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="bubble" style="width:260px;margin:18px auto 0">
+        To hear you, I first need to download a small listening pack for English. It stays on this computer. Shall I get it now?
+        <div class="row" style="margin-top:8px"><span class="btn yes">Yes, get it</span><span class="btn">Not now</span></div>
+      </div>
+      <svg class="tusk" viewBox="0 0 120 135"><use href="#t"/></svg>
+    </div></div>
+    <div class="card-body"><h3>B1. Ask first, in a bubble</h3><p>The first press of the mic asks before downloading. Honest and clear, but the very first try needs an extra answer.</p></div>
+  </div>
+
+  <div class="card" data-choice="B2" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="fam">
+        <b>Let Tusk hear you</b>
+        <p style="margin:4px 0 6px">Allow the microphone and get the listening pack for English, German and Spanish.</p>
+        <div class="row"><span class="btn yes">Set up listening</span></div>
+        <div class="bar"><i></i></div><span class="hint">Getting the German pack… 2 of 3</span>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>B2. The family does it during setup</h3><p>The family settings page has one "Set up listening" button: microphone permission plus the packs, with progress. The person never sees a download. Needs the family to do that step.</p></div>
+  </div>
+
+  <div class="card" data-choice="B3" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="bubble" style="width:250px;margin:24px auto 0;text-align:center">
+        <b>Getting ready to listen…</b>
+        <div class="bar"><i></i></div>
+        <span class="hint">The first time takes a few seconds.</span>
+      </div>
+      <svg class="tusk" viewBox="0 0 120 135"><use href="#t"/></svg>
+    </div></div>
+    <div class="card-body"><h3>B3. Just do it, with progress (my pick)</h3><p>The first press of the mic downloads the pack and shows a progress bar, then starts listening. No question, but a short wait the first time.</p></div>
+  </div>
+</div>
+
+<!-- ===================== C ===================== -->
+<div class="q"><h3>C. Which listener Tusk uses</h3><p>Tusk prefers the browser's listener on this computer. If that is missing or hears silence, it falls back to its own Whisper model. The browser's online listener (sends the voice to Google) is never on by itself.</p></div>
+<div class="cards">
+  <div class="card" data-choice="C1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel"><div class="head"><b>Settings</b><span class="x">✕</span></div>
+        <div class="set">
+          <div><span class="chk on"></span>Read answers aloud</div>
+          <div class="hint">🎤 Listening happens on this computer.</div>
+        </div></div>
+    </div></div>
+    <div class="card-body"><h3>C1. Automatic, one plain line</h3><p>Nothing to choose. Settings just says where listening happens. The online listener is not offered at all.</p></div>
+  </div>
+
+  <div class="card" data-choice="C2" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel"><div class="head"><b>Settings</b><span class="x">✕</span></div>
+        <div class="set">
+          <b>How should I listen?</b>
+          <div class="opt on"><b>On this computer</b><br><span class="hint">Private. Nothing leaves the computer.</span></div>
+          <div class="opt"><b>Online, with the browser's listener</b><br><span class="hint">Can understand better. Your voice goes to Google.</span></div>
+        </div></div>
+    </div></div>
+    <div class="card-body"><h3>C2. A choice in Tusk's settings</h3><p>Two big cards, private one selected by default. The person can opt in to the online listener, with a plain warning. Visible to everyone, one more decision.</p></div>
+  </div>
+
+  <div class="card" data-choice="C3" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="fam">
+        <b>Listening</b>
+        <div style="margin:6px 0"><span class="chk on"></span>On this computer only (recommended)</div>
+        <div><span class="chk"></span>Allow the browser's online listener as a backup. The voice is sent to Google.</div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>C3. Only in family settings (my pick)</h3><p>The person sees nothing. The family can allow the online listener as a backup, for example on a computer where on-device listening is not available.</p></div>
+  </div>
+</div>
+
+<!-- ===================== D ===================== -->
+<div class="q"><h3>D. Checking the read-aloud voice</h3><p>Today read-aloud is silent, with no message, when a computer has no usable voice.</p></div>
+<div class="cards">
+  <div class="card" data-choice="D1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel"><div class="head"><b>Settings</b><span class="x">✕</span></div>
+        <div class="set">
+          <div class="row"><span><span class="chk on"></span>Read answers aloud</span><span class="btn">🔊 Test voice</span></div>
+          <div class="hint">Did you hear me? Voice: Google US English (online).</div>
+        </div></div>
+    </div></div>
+    <div class="card-body"><h3>D1. A Test voice button in Tusk's settings</h3><p>Right next to "Read answers aloud". It says a sentence and names the voice, and says when it is an online voice.</p></div>
+  </div>
+
+  <div class="card" data-choice="D2" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="panel"><div class="list">
+        <div class="m me">read it to me please</div>
+        <div class="note">🔇 This computer has no voice for reading aloud in English. Ask your family to add one.</div>
+      </div></div>
+    </div></div>
+    <div class="card-body"><h3>D2. Tell the person when there is no voice</h3><p>When read-aloud is on but no voice exists, Tusk says so once in the chat instead of staying silent. No new button.</p></div>
+  </div>
+
+  <div class="card" data-choice="D3" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="stage">
+      <div class="fam">
+        <b>Read answers aloud</b>
+        <div class="row" style="margin:6px 0"><span class="btn">🔊 Test voice</span></div>
+        <div><span class="ok">English: Google US English (online)</span><br><span class="ok">German: Google Deutsch (online)</span><br><span class="warn">Spanish: no voice on this computer</span></div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>D3. Both, plus a voice check for the family (my pick)</h3><p>The Test voice button in Tusk's settings, the one-time note in the chat, and a list per language on the family settings page.</p></div>
+  </div>
+</div>

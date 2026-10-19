@@ -1,12 +1,11 @@
-import { test, expect } from "./fixtures";
-import { FEATURES } from "../../src/shared/features";
+import { test, expect, speechBuild } from "./fixtures";
 
-test.skip(!FEATURES.speechInput, "Speaking to Tusk is switched off (src/shared/features.ts).");
+test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:speech builds the speech variant).");
 
 // Chromium's fake microphone plays a beep, so there is always something to hear.
 test.use({ extraArgs: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
 
-test("listening bubble: labelled microphone switch turns listening off and on, Stop and send ends it", async ({ context, demoUrl, tusk }) => {
+test("@speech listening bubble: labelled microphone switch turns listening off and on, Stop and send ends it", async ({ context, demoUrl, tusk }) => {
   await tusk.configure();
   const page = await context.newPage();
   await page.goto(`${demoUrl}/blank.html`);

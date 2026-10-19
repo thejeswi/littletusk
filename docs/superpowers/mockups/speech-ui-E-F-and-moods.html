@@ -1,0 +1,248 @@
+<h2>The Speak button, the conversation, and Tusk's moods</h2>
+<p class="subtitle">Settled: A1 with your wording, B3, C3, D3. Open: E and F (the button is now called "Speak"), and G: Tusk's animations. Click the mood buttons in G to see each one move.</p>
+<style>
+  .q { margin: 26px 0 8px; }
+  .q h3 { margin: 0 0 4px; font-size: 18px; }
+  .q p { margin: 0 0 10px; color: #52606d; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+  .card { cursor: pointer; }
+  .card-body h3 { font-size: 16px; margin: 0 0 4px; }
+  .card-body p { font-size: 13.5px; margin: 0; color: #52606d; line-height: 1.45; }
+  .stage { position: relative; background: #f5f3ee; border-radius: 10px; padding: 14px; min-height: 250px; font: 15px/1.4 system-ui, sans-serif; color: #1f2933; }
+  /* Tusk's own look */
+  .panel { background: #fff; border: 2px solid #99bbbb; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.12); overflow: hidden; }
+  .head { display: flex; align-items: center; gap: 6px; padding: 7px 9px; background: #eef3f6; border-bottom: 1px solid #d3dde3; }
+  .head b { flex: 1; font-size: 15px; }
+  .hb { font-size: 11px; border: 1.5px solid #99bbbb; border-radius: 14px; padding: 2px 8px; background: #fff; white-space: nowrap; }
+  .x { font-size: 13px; padding: 0 4px; }
+  .list { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .m { padding: 6px 9px; border-radius: 12px; max-width: 88%; font-size: 13.5px; }
+  .me { align-self: flex-end; background: #e8f5ec; }
+  .tk { align-self: flex-start; background: #eceff2; }
+  .note { align-self: stretch; background: #fff8e0; border: 1px solid #e0c870; border-radius: 10px; padding: 6px 9px; font-size: 12.5px; }
+  .compose { display: flex; gap: 6px; align-items: center; padding: 7px; border-top: 1px solid #d3dde3; }
+  .tb { flex: 1; min-height: 34px; border: 2px solid #99bbbb; border-radius: 18px; padding: 6px 11px; font-size: 13px; color: #1f2933; background: #fff; display: flex; align-items: center; }
+  .tb.ph { color: #8a96a1; }
+  .tb.live { border-color: #2f9e6d; outline: 3px solid #ffb703; outline-offset: 1px; }
+  .mic { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #99bbbb; background: #fff; display: grid; place-items: center; font-size: 15px; }
+  .mic.on { background: #b42318; border-color: #b42318; color: #fff; }
+  .send { background: #2f9e6d; color: #fff; border-radius: 18px; padding: 7px 12px; font-size: 13px; font-weight: 600; }
+  .btn { display: inline-block; border-radius: 16px; padding: 5px 12px; font-size: 13px; font-weight: 600; border: 2px solid #99bbbb; background: #fff; }
+  .btn.yes { background: #2f9e6d; border-color: #2f9e6d; color: #fff; }
+  .btn.stop { background: #b42318; border-color: #b42318; color: #fff; }
+  .bubble { background: #fff; border: 2px solid #99bbbb; border-radius: 16px; padding: 10px 12px; font-size: 13.5px; box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+  .wave { display: flex; gap: 3px; align-items: center; height: 22px; margin: 6px 0; }
+  .wave i { width: 5px; background: #2f9e6d; border-radius: 3px; display: block; }
+  .sw { display: inline-flex; align-items: center; gap: 6px; border: 2px solid #99bbbb; border-radius: 16px; padding: 3px 9px; font-size: 12.5px; font-weight: 600; }
+  .track { width: 30px; height: 17px; border-radius: 9px; background: #2f9e6d; position: relative; display: inline-block; }
+  .track::after { content: ""; position: absolute; right: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hint { font-size: 12px; color: #52606d; }
+  .bar { height: 8px; border-radius: 4px; background: #e3e8ec; overflow: hidden; margin: 6px 0; }
+  .bar i { display: block; height: 100%; width: 40%; background: #2f9e6d; }
+  .tusk { position: absolute; right: 8px; bottom: 6px; width: 46px; }
+  .set { padding: 9px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+  .opt { border: 2px solid #99bbbb; border-radius: 10px; padding: 6px 8px; }
+  .opt.on { border-color: #2f9e6d; background: #eef8f2; }
+  .chk { display: inline-block; width: 15px; height: 15px; border: 2px solid #52606d; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .chk.on { background: #2f9e6d; border-color: #2f9e6d; }
+  .ok { color: #1a7f4b; font-weight: 600; } .warn { color: #b42318; font-weight: 600; }
+  .fam { background: #fff; border-radius: 12px; padding: 10px 12px; font-size: 13px; border: 1px solid #d3dde3; }
+</style>
+<style>
+  .corner { position: relative; height: 230px; background: #f5f3ee; border-radius: 10px; overflow: hidden; }
+  .corner .page { position: absolute; inset: 12px 12px auto 12px; height: 60px; background: #fff; border-radius: 8px; border: 1px solid #e3e8ec; }
+  .corner .t { position: absolute; width: 64px; height: 72px; }
+  .mb { position: absolute; display: grid; place-items: center; border-radius: 50%; background: #fff; border: 2px solid #99bbbb; box-shadow: 0 2px 6px rgba(0,0,0,.18); font-size: 14px; }
+  .mb.live { background: #b42318; border-color: #b42318; color: #fff; box-shadow: 0 0 0 6px rgba(180,35,24,.18); }
+  .pill { position: absolute; display: inline-flex; align-items: center; gap: 6px; border-radius: 18px; background: #fff; border: 2px solid #99bbbb; padding: 5px 11px; font-size: 13px; font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,.15); white-space: nowrap; }
+  .cap { position: absolute; right: 86px; bottom: 14px; width: 205px; background: #fff; border: 2px solid #99bbbb; border-radius: 14px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+  .cap .who { font-weight: 700; } .cap .dim { color: #52606d; }
+  .lbl { position: absolute; font-size: 11px; color: #52606d; }
+</style>
+
+<style>
+  /* the frame centers card images in a flex box; give the corner scenes real width and their own height */
+  .card-image:has(.corner) { aspect-ratio: auto; display: block; }
+  .corner { width: 100%; display: block; }
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="t"><ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/><ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/><circle cx="60" cy="58" r="36" fill="#b7c4cf"/><path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/><path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/><path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/><circle cx="47" cy="52" r="3" fill="#2b2b2b"/><circle cx="73" cy="52" r="3" fill="#2b2b2b"/><circle cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/><circle cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/></g>
+</defs></svg>
+<div class="q"><h3>E. Where the Speak button sits</h3><p>A small microphone labelled "Speak" that starts a spoken conversation, near Tusk in the bottom right corner.</p></div>
+<div class="cards">
+  <div class="card" data-choice="E1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner"><div class="page"></div>
+      <svg class="t" style="right:18px;bottom:22px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="mb" style="right:12px;bottom:14px;width:28px;height:28px">🎤</div>
+    </div></div>
+    <div class="card-body"><h3>E1. A badge on Tusk</h3><p>A round microphone badge on Tusk's lower right, like a notification dot. Takes no extra room. Small target for shaky hands.</p></div>
+  </div>
+  <div class="card" data-choice="E2" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner"><div class="page"></div>
+      <svg class="t" style="right:24px;bottom:58px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="pill" style="right:14px;bottom:14px">🎤 Speak</div>
+    </div></div>
+    <div class="card-body"><h3>E2. A labelled button below Tusk</h3><p>"🎤 Speak" sits under Tusk, so the word tells what it does. Tusk moves up a little. Biggest and clearest target.</p></div>
+  </div>
+  <div class="card" data-choice="E3" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner"><div class="page"></div>
+      <svg class="t" style="right:14px;bottom:14px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="mb" style="right:86px;bottom:28px;width:40px;height:40px;font-size:17px">🎤</div>
+      <span class="lbl" style="right:84px;bottom:12px">Speak</span>
+    </div></div>
+    <div class="card-body"><h3>E3. A round button beside Tusk</h3><p>A 40 pixel microphone to Tusk's left with a small "Speak" label. Tusk stays where it is. Medium target.</p></div>
+  </div>
+</div>
+
+<div class="q"><h3>F. How the spoken conversation goes</h3><p>After pressing the talk button. Either way, Tusk still asks before anything that cannot be undone, and passwords stay off limits.</p></div>
+<div class="cards">
+  <div class="card" data-choice="F1" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner" style="height:250px"><div class="page"></div>
+      <svg class="t" style="right:18px;bottom:22px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="mb live" style="right:12px;bottom:14px;width:28px;height:28px">■</div>
+      <div class="cap" style="bottom:12px">
+        <div><span class="who">You:</span> where do I log in?</div>
+        <div style="margin-top:4px"><span class="who">Tusk:</span> <span class="dim">See the "Mein Konto" button I lit up? That's it.</span></div>
+        <div class="hint" style="margin-top:6px">🔊 Speaking… then I listen again.</div>
+        <div style="margin-top:6px"><span class="btn stop">■ Stop talking</span></div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>F1. Hands-free, like a phone call</h3><p>Tusk listens, sends when you pause, says its answer aloud, then listens again. The words show as captions. "Stop talking" or a long silence ends it. Easiest, but a misheard sentence goes out without a check.</p></div>
+  </div>
+  <div class="card" data-choice="F2" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner" style="height:250px"><div class="page"></div>
+      <svg class="t" style="right:18px;bottom:22px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="mb" style="right:12px;bottom:14px;width:28px;height:28px">🎤</div>
+      <div class="cap" style="bottom:12px">
+        <div><span class="who">You:</span> where do I log in?</div>
+        <div style="margin-top:4px"><span class="who">Tusk:</span> <span class="dim">See the "Mein Konto" button I lit up? That's it.</span></div>
+        <div class="hint" style="margin-top:6px">Press 🎤 to say something else.</div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>F2. One question at a time</h3><p>Press, speak, Tusk answers aloud and stops. Press again for the next question. More presses, but the microphone is never left on.</p></div>
+  </div>
+  <div class="card" data-choice="F3" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="corner" style="height:250px"><div class="page"></div>
+      <svg class="t" style="right:18px;bottom:22px" viewBox="0 0 120 135"><use href="#t"/></svg>
+      <div class="mb live" style="right:12px;bottom:14px;width:28px;height:28px">■</div>
+      <div class="cap" style="bottom:12px">
+        <div><span class="who">I heard:</span> "where do I log in?"</div>
+        <div class="row" style="margin-top:7px"><span class="btn yes">Send</span><span class="btn">Say it again</span></div>
+        <div class="hint" style="margin-top:6px">Or just keep talking to change it.</div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>F3. Hands-free with a quick check</h3><p>Like F1, but Tusk shows what it heard with a big Send button before sending. Safer against mishearing, one press per turn.</p></div>
+  </div>
+</div>
+
+
+<style>
+  .play { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(240px, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 720px) { .play { grid-template-columns: 1fr; } }
+  .arena { position: relative; background: #f5f3ee; border-radius: 12px; height: 300px; overflow: hidden; display: grid; place-items: center; }
+  .moods { display: flex; flex-wrap: wrap; gap: 8px; }
+  .moods button { font: inherit; font-size: 14px; border: 2px solid #99bbbb; background: #fff; border-radius: 18px; padding: 6px 12px; cursor: pointer; }
+  .moods button:focus-visible { outline: 3px solid #ffb703; outline-offset: 2px; }
+  .mood-note { font-size: 13.5px; color: #52606d; margin-top: 10px; min-height: 3em; }
+  .smalls { display: flex; gap: 14px; align-items: flex-end; margin-top: 10px; }
+  .smalls svg { width: 40px; height: 45px; }
+
+  /* Tusk built from parts, each part can move on its own */
+  .tz { width: 180px; height: 202px; overflow: visible; }
+  .tz * { transform-box: fill-box; }
+  .tz .body { transform-origin: 50% 90%; }
+  .tz .earL { transform-origin: 90% 40%; } .tz .earR { transform-origin: 10% 40%; }
+  .tz .trunk { transform-origin: 50% 0%; } .tz .eyes { transform-origin: 50% 50%; }
+  .tz .dots, .tz .rings, .tz .spark, .tz .sweat { opacity: 0; }
+
+  /* idle: slow breathing and a blink now and then */
+  .idle .body { animation: breathe 4s ease-in-out infinite; }
+  .tz .eyes { animation: blink 5s infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  @keyframes blink { 0%,93%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+  /* hello: ears flap, a little hop */
+  .hello .body { animation: hop .7s ease-out 2; }
+  .hello .earL { animation: flapL .35s ease-in-out 4; } .hello .earR { animation: flapR .35s ease-in-out 4; }
+  @keyframes hop { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-14px); } 70% { transform: translateY(2px); } }
+  @keyframes flapL { 50% { transform: rotate(-18deg); } } @keyframes flapR { 50% { transform: rotate(18deg); } }
+
+  /* listening: ears open wide, head tilts, sound rings come in */
+  .listening .earL { transform: rotate(-14deg) scale(1.08); transition: transform .4s; }
+  .listening .earR { transform: rotate(14deg) scale(1.08); transition: transform .4s; }
+  .listening .body { animation: tilt 2.4s ease-in-out infinite; }
+  .listening .rings { opacity: 1; } .listening .rings path { animation: ring 1.4s ease-out infinite; } .listening .rings path:nth-child(2) { animation-delay: .45s; }
+  @keyframes tilt { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(-1deg); } }
+  @keyframes ring { 0% { opacity: 0; transform: translateX(10px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateX(-4px); } }
+
+  /* thinking: eyes look up, trunk curls up, dots bounce */
+  .thinking .eyes { transform: translateY(-3px); animation: none; }
+  .thinking .trunk { animation: curl 1.6s ease-in-out infinite; }
+  .thinking .dots { opacity: 1; } .thinking .dots circle { animation: dot 1.2s ease-in-out infinite; }
+  .thinking .dots circle:nth-child(2) { animation-delay: .2s; } .thinking .dots circle:nth-child(3) { animation-delay: .4s; }
+  @keyframes curl { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+  @keyframes dot { 0%,100% { transform: translateY(0); opacity: .4; } 50% { transform: translateY(-6px); opacity: 1; } }
+
+  /* speaking: trunk sways in rhythm, cheeks glow, sound arcs from the trunk */
+  .speaking .trunk { animation: sway .45s ease-in-out infinite; }
+  .speaking .cheek { animation: glow .9s ease-in-out infinite; }
+  .speaking .rings { opacity: 1; } .speaking .rings path { animation: ring .9s ease-out infinite; }
+  @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(6deg); } }
+  @keyframes glow { 50% { opacity: 1; } }
+
+  /* done: a happy hop with sparkles */
+  .done .body { animation: hop .6s ease-out 3; }
+  .done .earL { animation: flapL .3s ease-in-out 6; } .done .earR { animation: flapR .3s ease-in-out 6; }
+  .done .spark { opacity: 1; animation: spark 1.6s ease-out 2; }
+  @keyframes spark { 0% { transform: scale(.4); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+
+  /* sorry: head droops, ears hang, slow */
+  .sorry .body { transform: translateY(6px) rotate(-5deg); transition: transform .6s; }
+  .sorry .earL { transform: rotate(16deg); transition: transform .6s; } .sorry .earR { transform: rotate(-16deg); transition: transform .6s; }
+  .sorry .eyes { transform: translateY(2px) scaleY(.6); animation: none; }
+
+  /* walking over to point: a soft bob while gliding */
+  .walking { animation: glide 2.6s ease-in-out infinite alternate; }
+  .walking .body { animation: step .32s ease-in-out infinite; }
+  @keyframes glide { from { transform: translateX(-70px); } to { transform: translateX(70px); } }
+  @keyframes step { 50% { transform: translateY(-4px) rotate(2deg); } }
+
+  @media (prefers-reduced-motion: reduce) { .tz *, .walking { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="q"><h3>G. Tusk's moods</h3><p>Gentle, slow moves so they never distract. Each mood matches something Tusk is doing. Click a mood, then tell me what to change. People who switch off motion in their computer settings get a still Tusk.</p></div>
+<div class="play">
+  <div class="arena" id="arena">
+    <svg id="tz" class="tz idle" viewBox="0 0 120 135" role="img" aria-label="Tusk">
+      <g class="body">
+        <ellipse class="earL" cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+        <ellipse class="earR" cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+        <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
+        <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/>
+        <path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd"/>
+        <g class="trunk"><path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/></g>
+        <g class="eyes"><circle cx="47" cy="52" r="3" fill="#2b2b2b"/><circle cx="73" cy="52" r="3" fill="#2b2b2b"/></g>
+        <circle class="cheek" cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/><circle class="cheek" cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+      </g>
+      <g class="rings" stroke="#2f9e6d" stroke-width="3" fill="none" stroke-linecap="round"><path d="M112 40 q8 15 0 30"/><path d="M120 34 q11 21 0 42"/></g>
+      <g class="dots" fill="#52606d"><circle cx="86" cy="12" r="3.5"/><circle cx="97" cy="8" r="3.5"/><circle cx="108" cy="4" r="3.5"/></g>
+      <g class="spark" fill="#ffb703"><path d="M10 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M104 2 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/></g>
+    </svg>
+  </div>
+  <div>
+    <div class="moods" role="group" aria-label="Moods">
+      <button onclick="document.getElementById('tz').setAttribute('class','tz idle');document.getElementById('arena').firstElementChild.parentElement.className='arena';document.getElementById('mn').textContent='Idle: waiting in the corner. Slow breathing and a blink now and then.'">Idle</button>
+      <button onclick="var t=document.getElementById('tz');t.setAttribute('class','tz');void t.getBBox();t.setAttribute('class','tz hello');document.getElementById('mn').textContent='Hello: when the person clicks Tusk or the chat opens. Ears flap, a little hop.'">Hello (clicked)</button>
+      <button onclick="document.getElementById('tz').setAttribute('class','tz listening');document.getElementById('mn').textContent='Listening: while the microphone is on. Ears open wide, head tilts, sound rings come in.'">Listening</button>
+      <button onclick="document.getElementById('tz').setAttribute('class','tz thinking');document.getElementById('mn').textContent='Thinking: while waiting for the answer. Eyes look up, trunk curls, three dots bounce.'">Thinking</button>
+      <button onclick="document.getElementById('tz').setAttribute('class','tz speaking');document.getElementById('mn').textContent='Speaking: while reading the answer aloud. Trunk sways with the words, cheeks glow.'">Speaking</button>
+      <button onclick="var t=document.getElementById('tz');t.setAttribute('class','tz');void t.getBBox();t.setAttribute('class','tz done');document.getElementById('mn').textContent='Done: after a step worked, for example the popup closed. A happy hop with sparkles.'">Done</button>
+      <button onclick="document.getElementById('tz').setAttribute('class','tz sorry');document.getElementById('mn').textContent='Sorry: when something did not work. Head droops, ears hang. Never shown for the person\'s mistakes.'">Sorry</button>
+      <button onclick="var t=document.getElementById('tz');t.setAttribute('class','tz idle walking');document.getElementById('mn').textContent='Walking: on the way to point at something. A soft bob while gliding over.'">Walking over</button>
+    </div>
+    <p class="mood-note" id="mn" aria-live="polite">Idle: waiting in the corner. Slow breathing and a blink now and then.</p>
+    <div class="hint">At its real size on a page:</div>
+    <div class="smalls"><svg viewBox="0 0 120 135"><use href="#t"/></svg><span class="hint">40 px</span></div>
+  </div>
+</div>

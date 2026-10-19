@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
 
+// LITTLETUSK_SPEECH=1 switches speaking to Tusk on at build time (__SPEECH__); with --mode e2e it goes to dist-e2e-speech/.
 // Main build: service worker, extension pages and workers as ES modules.
 // The content script is built separately (vite.content.config.ts) as one IIFE.
 // Workers are bundled by referencing them with
@@ -9,11 +10,11 @@ import { resolve } from "node:path";
 export default defineConfig(({ mode }) => ({
   root: "src",
   // __E2E__ is true only in `vite build --mode e2e` (dist-e2e/), where the faux provider is bundled.
-  define: { __E2E__: JSON.stringify(mode === "e2e") },
+  define: { __E2E__: JSON.stringify(mode === "e2e"), __SPEECH__: JSON.stringify(process.env.LITTLETUSK_SPEECH === "1") },
   base: "./",
   publicDir: false,
   build: {
-    outDir: resolve(import.meta.dirname, mode === "e2e" ? "dist-e2e" : "dist"),
+    outDir: resolve(import.meta.dirname, mode === "e2e" ? (process.env.LITTLETUSK_SPEECH === "1" ? "dist-e2e-speech" : "dist-e2e") : "dist"),
     emptyOutDir: true,
     sourcemap: false,
     target: "es2022",

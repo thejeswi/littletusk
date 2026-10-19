@@ -1,9 +1,8 @@
-import { test, expect } from "./fixtures";
-import { FEATURES } from "../../src/shared/features";
+import { test, expect, speechBuild } from "./fixtures";
 
-test.skip(!FEATURES.speechInput, "Speaking to Tusk is switched off (src/shared/features.ts).");
+test.skip(!speechBuild, "Speaking to Tusk is off in this build (npm run e2e:speech builds the speech variant).");
 
-test("Speak without microphone permission opens the permission window and says why", async ({ context, demoUrl, tusk }) => {
+test("@speech Speak without microphone permission opens the permission window and says why", async ({ context, demoUrl, tusk }) => {
   await tusk.configure();
   const page = await context.newPage();
   await page.goto(`${demoUrl}/blank.html`);

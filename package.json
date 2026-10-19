@@ -8,9 +8,11 @@
   "scripts": {
     "build": "vite build && vite build --config vite.content.config.ts && node scripts/post-build.mjs",
     "build:e2e": "vite build --mode e2e && vite build --config vite.content.config.ts --mode e2e && node scripts/post-build.mjs dist-e2e",
+    "build:e2e:speech": "LITTLETUSK_SPEECH=1 vite build --mode e2e && LITTLETUSK_SPEECH=1 vite build --config vite.content.config.ts --mode e2e && node scripts/post-build.mjs dist-e2e-speech",
+    "e2e:speech": "npm run build:e2e:speech && LITTLETUSK_SPEECH=1 playwright test tests/e2e --grep @speech",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "npm run build:e2e && playwright test tests/e2e",
+    "e2e": "npm run build:e2e && playwright test tests/e2e && npm run e2e:speech",
     "scenarios": "npm run build:e2e && playwright test -c playwright.scenarios.config.ts",
     "scenarios:live": "npm run build:e2e && LITTLETUSK_LIVE=1 playwright test -c playwright.scenarios.config.ts",
     "check-clean": "bash scripts/check-clean.sh",

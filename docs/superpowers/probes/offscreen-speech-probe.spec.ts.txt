@@ -1,0 +1,21 @@
+import { test } from "./fixtures";
+import { cdpEval } from "./cdp-eval";
+test.use({ extraArgs: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--remote-debugging-port=9333"] });
+const probe = `(async () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const r = { where: location.pathname, vis: document.visibilityState, active: navigator.userActivation && navigator.userActivation.isActive };
+  r.avail = await SR.available({ langs: ["en-US"], processLocally: true });
+  const t = Date.now();
+  r.install = await Promise.race([SR.install({ langs: ["en-US"], processLocally: true }).then((v) => "resolved " + v, (e) => "threw " + e), new Promise((res) => setTimeout(() => res("timeout 90s"), 90000))]);
+  r.ms = Date.now() - t;
+  r.avail2 = await SR.available({ langs: ["en-US"], processLocally: true });
+  return r;
+})()`;
+test("probe", async ({ tusk, context, extensionId }) => {
+  test.setTimeout(150000);
+  await tusk.configure();
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/pages/setup.html`);
+  const off = "skipped"; const pg = await page.evaluate(probe);
+  console.log("PROBE offscreen", JSON.stringify(off), "\nPROBE page", JSON.stringify(pg));
+});

@@ -1,7 +1,7 @@
 // On-page overlay: the floating baby elephant "Tusk", its chat, settings and target marks. Clicking Tusk opens the chat.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
 import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
-import { LANGUAGE_NAMES, t, type I18nKey } from "../../shared/i18n";
+import { LANGUAGE_NAMES, TABLES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
 import { FEATURES } from "../../shared/features";
 
@@ -25,6 +25,10 @@ export interface OverlayController {
   setView(view: ChatView): void;
   setSettings(s: PublicSettings): void;
   setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string): void;
+  /** Explicit mood. hello, done and sorry play once and fall back; the others stay until setMood("idle"). */
+  setMood(m: Mood): void;
+  /** Read-aloud is playing. */
+  setSpeaking(on: boolean): void;
   say(text: string): void;
   pointAt(el: Element, say: string): void;
   spotlight(el: Element, say: string): void;
@@ -34,31 +38,36 @@ export interface OverlayController {
   destroy(): void;
 }
 
-// Approved character art (assets/tusk.svg and assets/tusk-pointing.svg), inlined.
-const REST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 135" aria-hidden="true" focusable="false">
-  <ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
-  <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M75 82 q9 5 7 14 q-8 -1 -11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <circle cx="47" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="73" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="40" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-  <circle cx="80" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+// Approved character art (assets/tusk.svg and assets/tusk-pointing.svg), built from parts so each mood can move
+// them on its own: body (earL, earR, head, tusks, trunk, eyes, cheeks) plus overlay layers (rings, dots, spark).
+const LAYERS = `<g class="rings" stroke="#2f9e6d" stroke-width="3" fill="none" stroke-linecap="round"><path d="M112 40 q8 15 0 30"/><path d="M120 34 q11 21 0 42"/></g>
+  <g class="dots" fill="#52606d"><circle cx="86" cy="12" r="3.5"/><circle cx="97" cy="8" r="3.5"/><circle cx="108" cy="4" r="3.5"/></g>
+  <g class="spark" fill="#ffb703"><path d="M10 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M104 2 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/></g>`;
+const TUSK_PATH = `fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"`;
+function tuskSvg(box: number, tuskR: string, trunk: string, eyeX: [number, number], cheekX: [number, number]): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box} 135" aria-hidden="true" focusable="false">
+  <g class="body">
+    <ellipse class="earL" cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+    <ellipse class="earR" cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
+    <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
+    <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" ${TUSK_PATH}/>
+    <path d="${tuskR}" ${TUSK_PATH}/>
+    <g class="trunk"><path d="${trunk}" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/></g>
+    <g class="eyes"><circle cx="${eyeX[0]}" cy="52" r="3" fill="#2b2b2b"/><circle cx="${eyeX[1]}" cy="52" r="3" fill="#2b2b2b"/></g>
+    <circle class="cheek" cx="${cheekX[0]}" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+    <circle class="cheek" cx="${cheekX[1]}" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
+  </g>
+  ${LAYERS}
 </svg>`;
-const POINT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 135 135" aria-hidden="true" focusable="false">
-  <ellipse cx="22" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <ellipse cx="98" cy="55" rx="20" ry="22" fill="#c9d3dc"/>
-  <circle cx="60" cy="58" r="36" fill="#b7c4cf"/>
-  <path d="M45 82 q-9 5 -7 14 q8 -1 11 -11 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M72 80 q10 3 10 13 q-8 0 -12 -9 z" fill="#fbf6e9" stroke="#e3d9bd" stroke-width="1"/>
-  <path d="M60 80 C 72 92, 84 74, 100 84 C 110 90, 120 80, 128 82" stroke="#b7c4cf" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <circle cx="50" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="76" cy="52" r="3" fill="#2b2b2b"/>
-  <circle cx="42" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-  <circle cx="82" cy="64" r="5" fill="#f4b6b6" opacity=".7"/>
-</svg>`;
+}
+const REST_SVG = tuskSvg(120, "M75 82 q9 5 7 14 q-8 -1 -11 -11 z",
+  "M60 80 C 47 90, 73 102, 60 114 C 54 120, 62 126, 68 124", [47, 73], [40, 80]);
+const POINT_SVG = tuskSvg(135, "M72 80 q10 3 10 13 q-8 0 -12 -9 z",
+  "M60 80 C 72 92, 84 74, 100 84 C 110 90, 120 80, 128 82", [50, 76], [42, 82]);
+
+export type Mood = "idle" | "hello" | "listening" | "thinking" | "speaking" | "done" | "sorry";
+const ONE_SHOT_MS: Partial<Record<Mood, number>> = { hello: 1700, done: 1900, sorry: 2000 };
+const WALK_MS = 700; // a little longer than the glide (0.6 s)
 
 const S = 72; // Tusk box size in px
 const GAP = 12;
@@ -104,6 +113,15 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   let rafId = 0;
   let lastMarkKey = "";
   let viewSeen = false;
+  let micLive = false; // listening bubble is up and not transcribing
+  let speakingOn = false;
+  let forced: Mood | null = null; // from setMood
+  let oneShot: Mood | null = null;
+  let oneShotTimer: ReturnType<typeof setTimeout> | undefined;
+  let walkTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastPos = "";
+  const actionSeen = new Map<string, string>(); // item id -> state last seen
+  const noticesSeen = new Set<string>();
   let lastTuskKey = "";
   let shownQuestion = "";
   let destroyed = false;
@@ -132,7 +150,43 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const breathe = h("div", "breathe");
   const rest = h("div", "pose-rest"); rest.innerHTML = REST_SVG;
   const point = h("div", "pose-point"); point.innerHTML = POINT_SVG;
-  breathe.append(rest, point); flipEl.append(breathe); tusk.append(flipEl);
+  breathe.append(rest, point);
+  // Moods: one class on the button (m-listening ...), CSS does the moving.
+  const doneTexts = (["actClicked", "actClosed"] as const).flatMap((k) =>
+    Object.values(TABLES).map((tb) => (tb[k] as string).split("{name}")[0]));
+  const baseMood = (): Mood =>
+    micLive || forced === "listening" ? "listening"
+    : speakingOn || forced === "speaking" ? "speaking"
+    : view?.busy || forced === "thinking" ? "thinking" : "idle";
+  function applyMood() {
+    const m = oneShot ?? baseMood();
+    for (const c of [...tusk.classList]) if (c.startsWith("m-")) tusk.classList.remove(c);
+    tusk.classList.add("m-" + m);
+  }
+  function playOnce(m: Mood) {
+    clearTimeout(oneShotTimer);
+    oneShot = null; applyMood();
+    void tusk.getBoundingClientRect(); // restart the animation if the same mood plays twice
+    oneShot = m; applyMood();
+    oneShotTimer = setTimeout(() => { oneShot = null; applyMood(); }, ONE_SHOT_MS[m] ?? 1800);
+  }
+  function moodsFromView(v: ChatView) {
+    let mood: Mood | null = null;
+    for (const it of v.items) {
+      if (it.kind === "action") {
+        const was = actionSeen.get(it.id);
+        actionSeen.set(it.id, it.state);
+        if (!viewSeen || was === it.state) continue;
+        if (it.state === "failed") mood = "sorry";
+        else if (it.state === "done" && mood !== "sorry" && doneTexts.some((d) => it.text.startsWith(d))) mood = "done";
+      } else if (it.kind === "notice" && !noticesSeen.has(it.id)) {
+        noticesSeen.add(it.id);
+        if (viewSeen) mood = "sorry";
+      }
+    }
+    if (mood) playOnce(mood); else applyMood();
+  }
+  applyMood(); flipEl.append(breathe); tusk.append(flipEl);
   bind(() => tusk.setAttribute("aria-label", t(lang(), "tuskName") + ": " + t(lang(), "chat")));
 
   const bubbleEl = h("div", "bubble", { role: "status" }); bubbleEl.hidden = true;
@@ -479,6 +533,13 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   function layout() {
     if (destroyed) return;
     const p = tuskPos();
+    const pos = `${Math.round(p.x)},${Math.round(p.y)}`;
+    if (lastPos && pos !== lastPos && !tusk.classList.contains("dragging")) {
+      tusk.classList.add("walking");
+      clearTimeout(walkTimer);
+      walkTimer = setTimeout(() => tusk.classList.remove("walking"), WALK_MS);
+    }
+    lastPos = pos;
     put(tusk, p.x, p.y);
     const pointing = !!tuskTarget;
     tusk.classList.toggle("pointing", pointing);
@@ -627,6 +688,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   tusk.addEventListener("click", () => {
     if (suppressClick) return;
     setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat
+    playOnce("hello");
   });
   window.addEventListener("resize", onResize);
   function onResize() { lastMarkKey = ""; layout(); }
@@ -658,6 +720,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const ctrl: OverlayController = {
     setView(v) {
       view = v;
+      moodsFromView(v);
       renderChat();
       if (panel === "chat") scrollDown();
       popNewTusk(v);
@@ -669,6 +732,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       if (ph) micPhase = ph;
       else if (!l) micPhase = "listening";
       micProgress = ph === "transcribing" ? progress : undefined;
+      micLive = l && micPhase !== "transcribing";
+      applyMood();
       phase += 1;
       waveBars.forEach((b, i) => {
         const amp = 0.35 + 0.65 * Math.abs(Math.sin(phase * 0.9 + i * 0.8));
@@ -676,6 +741,13 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       });
       applyMic();
     },
+    setMood(m) {
+      if (m === "hello" || m === "done" || m === "sorry") { playOnce(m); return; }
+      clearTimeout(oneShotTimer); oneShot = null;
+      forced = m === "idle" ? null : m;
+      applyMood();
+    },
+    setSpeaking(on) { speakingOn = on; applyMood(); },
     say(text) { showBubble({ text, src: "say" }, 12000); },
     pointAt(el, say) { startMark(el, "point", say, "point"); },
     spotlight(el, say) { startMark(el, "spot", say, "point"); },
@@ -695,7 +767,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     },
     destroy() {
       destroyed = true;
-      clearTimeout(bubbleTimer);
+      clearTimeout(bubbleTimer); clearTimeout(oneShotTimer); clearTimeout(walkTimer);
       if (rafId && typeof cancelAnimationFrame === "function") cancelAnimationFrame(rafId);
       document.removeEventListener("keydown", onDocKey);
       document.removeEventListener("pointerdown", onDocPointer, true);
