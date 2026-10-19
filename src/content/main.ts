@@ -216,6 +216,9 @@ function main() {
       case "speaking":
         ctrl?.setSpeaking(msg.on);
         return false;
+      case "speech-host":
+        ctrl?.speechHost(msg.cmd);
+        return false;
       case "page":
         onPage(msg.cmd).then(sendResponse, (e) => sendResponse({ ok: false, error: `ERROR: ${String((e as Error)?.message ?? e)}` }));
         return true;

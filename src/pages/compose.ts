@@ -7,8 +7,10 @@
 // microphone (phase, words, progress) with postMessage.
 import { t } from "../shared/i18n";
 import { FEATURES } from "../shared/features";
-import type { Language, MicPhase, ToAgent } from "../shared/protocol";
-import { SETTINGS_KEY } from "../shared/protocol";
+import { loadSettings } from "../shared/settings";
+import { createSpeechAuto } from "../speech/select";
+import type { Language, MicPhase, SpeechEvent, SpeechHostCommand, ToAgent } from "../shared/protocol";
+import { SETTINGS_KEY, type Settings } from "../shared/protocol";
 
 const form = document.getElementById("f") as HTMLFormElement;
 const input = document.getElementById("t") as HTMLInputElement;
@@ -26,6 +28,39 @@ let phase: MicPhase = "listening";
 let progress: string | undefined;
 let sendAfterStop = false;
 let micBusy = false; // mic-start was sent, the engine is not answering yet
+let settings: Settings | null = null;
+let engine: ReturnType<typeof createSpeechAuto> | null = null;
+
+// The microphone runs here, in an extension page, because an offscreen document cannot get
+// microphone permission. The agent sends start/stop/pause; this frame reports levels, words and state.
+function sendSpeechEvent(event: SpeechEvent): void {
+  void chrome.runtime.sendMessage({ to: "agent", type: "speech-event", event }).catch(() => undefined);
+}
+
+async function startEngine(lang: Language): Promise<void> {
+  settings = await loadSettings().catch(() => null);
+  if (!engine) {
+    engine = createSpeechAuto({
+      wasmBase: chrome.runtime.getURL("wasm/"),
+      online: () => settings?.listenOnline === true,
+      onLevel: (level) => sendSpeechEvent({ event: "level", level }),
+      onPartial: (text) => sendSpeechEvent({ event: "partial", text }),
+      onState: (state, detail) => sendSpeechEvent({ event: "state", state, detail }),
+    });
+  }
+  await engine.start(lang);
+}
+
+function runSpeechCommand(cmd: SpeechHostCommand): void {
+  if (!FEATURES.speechInput) return;
+  if (cmd.op === "start") void startEngine(cmd.lang);
+  else if (cmd.op === "stop") void engine?.stop();
+  else engine?.pause(cmd.paused);
+}
+
+function announceReady(): void {
+  try { window.parent.postMessage({ __littletusk: "speech-ready" }, "*"); } catch { /* top level */ }
+}
 
 function applyLanguage(next: Language): void {
   lang = next;
@@ -120,8 +155,11 @@ form.addEventListener("submit", (e) => {
 
 // The overlay's microphone state (A1): words, phase, pack progress.
 window.addEventListener("message", (e) => {
-  const m = e.data as { __littletusk?: string; listening?: boolean; phase?: MicPhase; progress?: string; text?: string } | undefined;
-  if (!m || m.__littletusk !== "mic") return;
+  const m = e.data as { __littletusk?: string; cmd?: SpeechHostCommand; listening?: boolean; phase?: MicPhase; progress?: string; text?: string } | undefined;
+  if (!m) return;
+  if (m.__littletusk === "speech-host" && m.cmd) { runSpeechCommand(m.cmd); return; }
+  if (m.__littletusk === "speech-ping") { announceReady(); return; }
+  if (m.__littletusk !== "mic") return;
   const wasListening = listening;
   const wasBusy = micBusy;
   listening = m.listening === true;
@@ -169,4 +207,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 void loadLanguage();
 if (!FEATURES.speechInput) { micBtn.hidden = true; hint.hidden = true; }
+announceReady();
 document.body.dataset.ready = "1";

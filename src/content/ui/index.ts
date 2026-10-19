@@ -1,6 +1,6 @@
 // On-page overlay: the floating baby elephant "Tusk", its chat, settings and target marks. Clicking Tusk opens the chat.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
-import type { ChatItem, ChatView, ConversationState, Language, MicPhase, Mode, Settings, VoiceTest } from "../../shared/protocol";
+import type { ChatItem, ChatView, ConversationState, Language, MicPhase, Mode, Settings, SpeechHostCommand, VoiceTest } from "../../shared/protocol";
 import { LANGUAGE_NAMES, TABLES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
 import { FEATURES } from "../../shared/features";
@@ -30,6 +30,8 @@ export interface OverlayController {
   setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string, text?: string): void;
   /** E1 + F1: the spoken conversation is on (or off with null). */
   setConversation(state: ConversationState | null): void;
+  /** Send a start/stop/pause to the speech engine, which runs in the composing iframe. */
+  speechHost(cmd: SpeechHostCommand): void;
   /** Explicit mood. hello, done and sorry play once and fall back; the others stay until setMood("idle"). */
   setMood(m: Mood): void;
   /** Read-aloud is playing. */
@@ -124,6 +126,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   let conversation: ConversationState | null = null;
   let speakingOn = false;
   let speechText = ""; // live words, forwarded to the chat's typing box
+  const speechQueue: SpeechHostCommand[] = []; // start/stop commands that arrived before the typing box was ready
+  let composeReady = false;
   let forced: Mood | null = null; // from setMood
   let oneShot: Mood | null = null;
   let oneShotTimer: ReturnType<typeof setTimeout> | undefined;
@@ -257,7 +261,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   // consent on video sites) or keyboard shortcuts cannot take its focus or swallow its keys, and the
   // message goes from there straight to the agent, never through the page.
   const composeUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/compose.html") : "about:blank";
-  const composeFrame = h("iframe", "compose-frame", { src: composeUrl, allowtransparency: "true" });
+  const composeFrame = h("iframe", "compose-frame", { src: composeUrl, allowtransparency: "true", allow: "microphone" });
   label(composeFrame, "typeHere", "title");
   // The microphone button and the live words live inside the typing box (A1).
   const foot = h("div", "foot");
@@ -421,7 +425,29 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       w.postMessage({ __littletusk: "mic", listening, phase: micPhase, progress: micProgress, text: speechText }, "*");
     } catch { /* the frame is not ready */ }
   }
-  composeFrame.addEventListener("load", () => postCompose());
+  composeFrame.addEventListener("load", () => {
+    postCompose();
+    composeReady = false;
+    try { composeFrame.contentWindow?.postMessage({ __littletusk: "speech-ping" }, "*"); } catch { /* not ready */ }
+  });
+  // The composing iframe hosts the microphone; wait until its script is ready, then deliver queued commands.
+  window.addEventListener("message", (e) => {
+    const m = e.data as { __littletusk?: string } | undefined;
+    if (m?.__littletusk !== "speech-ready") return;
+    composeReady = true;
+    for (const cmd of speechQueue.splice(0)) {
+      try { composeFrame.contentWindow?.postMessage({ __littletusk: "speech-host", cmd }, "*"); } catch { /* not ready */ }
+    }
+  });
+
+  function speechHost(cmd: SpeechHostCommand): void {
+    speechQueue.push(cmd);
+    if (!composeReady) return;
+    const w = composeFrame.contentWindow;
+    for (const c of speechQueue.splice(0)) {
+      try { w?.postMessage({ __littletusk: "speech-host", cmd: c }, "*"); } catch { /* not ready */ }
+    }
+  }
 
   // ---------- the spoken conversation (E1 + F1) ----------
   function renderConversation() {
@@ -841,6 +867,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       conversation = state && state.on ? state : null;
       renderConversation();
     },
+    speechHost,
     setMood(m) {
       if (m === "hello" || m === "done" || m === "sorry") { playOnce(m); return; }
       clearTimeout(oneShotTimer); oneShot = null;

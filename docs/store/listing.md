@@ -53,7 +53,7 @@ Little Tusk helps people who find websites confusing: it points out and explains
 Saves the person's settings (language, mode, spending limit), the API key they entered, and the monthly spend counter in the extension's private storage on their computer. Nothing is sent to us.
 
 ### offscreen
-The AI helper (conversation, notes and the chat database) runs in an offscreen document, because a Manifest V3 service worker is stopped by the browser after a short time and cannot keep a conversation, a database and a long request to the AI provider alive. The offscreen document runs only the extension's own packaged code. It also uses the microphone there when the person speaks to Tusk, because an offscreen document may ask for user media with the USER_MEDIA reason. The microphone is used only while the person is listening, and the audio is turned into text on the computer.
+The AI helper (conversation, notes and the chat database) runs in an offscreen document, because a Manifest V3 service worker is stopped by the browser after a short time and cannot keep a conversation, a database and a long request to the AI provider alive. The offscreen document runs only the extension's own packaged code. The microphone is not used there: speech runs in Tusk's composing frame, an extension page, so the browser can ask for microphone permission. The microphone is used only while the person is listening, and the audio is turned into text on the computer.
 
 ### scripting
 Used to put Tusk's page-side code into tabs that were already open when the extension was installed or updated, so Tusk appears there without the person having to reload each page.

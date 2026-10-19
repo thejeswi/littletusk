@@ -1,7 +1,7 @@
 // The agent: one pi-durable conversation per browser profile, wired to the service worker.
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { createRegistry, Harness, UsageDoc, type Conversation } from "@earendil-works/pi-durable";
-import type { ChatItem, ChatView, ConversationPhase, ConversationState, FromAgent, Language, PageCommand, PageResult, RelayedToAgent, Settings, VoiceTest } from "../shared/protocol";
+import type { ChatItem, ChatView, ConversationPhase, ConversationState, FromAgent, Language, PageCommand, PageResult, RelayedToAgent, Settings, SpeechEvent, SpeechHostCommand, VoiceTest } from "../shared/protocol";
 import { DEFAULT_SETTINGS } from "../shared/protocol";
 import { LANGUAGE_NAMES, t } from "../shared/i18n";
 import { isJunkTranscript } from "../speech/junk";
@@ -329,6 +329,8 @@ export class TuskAgent {
         return void (() => { const done = this.speakWaiters.get(msg.reqId); this.speakWaiters.delete(msg.reqId); done?.(); })();
       case "no-voice":
         return void (await this.noteNoVoice(msg.lang));
+      case "speech-event":
+        return void this.onSpeechEvent(msg.event);
       case "overlay-help": {
         // The person accepted help with a popup that has no obvious close button.
         if (msg.tabId) await this.update((s) => void (s.taskTabId = msg.tabId!));
@@ -449,26 +451,33 @@ export class TuskAgent {
     void sendSw({ to: "sw", type: "mic-level", level, listening, phase, progress, text });
   }
 
+  /** The microphone runs in the composing iframe (an extension page); this side sends it commands. */
+  private async speechCommand(cmd: SpeechHostCommand): Promise<void> {
+    await sendSw({ to: "sw", type: "speech-host", tabId: this.taskTab || undefined, cmd });
+  }
+
   private async loadSpeech(): Promise<SpeechLike | undefined> {
     if (this.speech) return this.speech;
-    // Optional: the speech module is built by another part. Without it, the mic says so.
-    const loader = Object.values(import.meta.glob("../speech/select.ts"))[0];
-    if (!loader) return undefined;
-    const mod = (await loader()) as { createSpeechAuto(o: unknown): SpeechLike };
-    this.speech = mod.createSpeechAuto({
-      wasmBase: chrome.runtime.getURL("wasm/"),
-      online: () => this.settings.listenOnline,
-      onLevel: (level: number) => {
-        if (this.conv.active && level > 0.1) this.conv.lastHeard = Date.now();
-        this.sendMic(level, true, "listening");
-      },
-      onPartial: (text: string) => {
-        if (this.conv.active) { this.conv.lastHeard = Date.now(); return; } // captions, not the chat box
-        this.sendMic(0, true, "listening", undefined, text);
-      },
-      onState: (state: string, detail?: string) => this.onSpeechState(state, detail),
-    });
+    this.speech = {
+      start: async (lang: string) => { await this.speechCommand({ op: "start", lang: lang as Language }); },
+      stop: async () => { await this.speechCommand({ op: "stop" }); return ""; },
+      pause: (paused: boolean) => { void this.speechCommand({ op: "pause", paused }); },
+      dispose: () => { void this.speechCommand({ op: "stop" }); },
+    };
     return this.speech;
+  }
+
+  /** Levels, live words and state from the composing iframe. */
+  private onSpeechEvent(e: SpeechEvent): void {
+    if (e.event === "level") {
+      if (this.conv.active && e.level > 0.1) this.conv.lastHeard = Date.now();
+      this.sendMic(e.level, true, "listening");
+    } else if (e.event === "partial") {
+      if (this.conv.active) { this.conv.lastHeard = Date.now(); return; } // captions, not the chat box
+      this.sendMic(0, true, "listening", undefined, e.text);
+    } else {
+      this.onSpeechState(e.state, e.detail);
+    }
   }
 
   private onSpeechState(state: string, detail?: string): void {
@@ -528,8 +537,8 @@ export class TuskAgent {
       this.sendMic(0, false);
       return;
     }
-    const text = (await speech.stop()).trim();
-    this.sendMic(0, false, undefined, undefined, text);
+    // The engine reports the final words as an idle state (see onSpeechState).
+    await speech.stop();
   }
 
   // ---------- hands-free conversation (E1 + F1) ----------

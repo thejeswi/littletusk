@@ -17,21 +17,13 @@ export interface FauxSpeechOptions {
   onPartial?(text: string): void;
 }
 
-// The offscreen document can only use chrome.runtime: the script lives in chrome.storage, reached
-// through the service worker's test-only e2e-get / e2e-set messages.
+// The engine runs in an extension page, so the script can read chrome.storage directly.
 async function get(key: string): Promise<unknown> {
-  try {
-    const r = (await chrome.runtime.sendMessage({ to: "sw", type: "e2e-get", key })) as { value?: unknown } | undefined;
-    return r?.value;
-  } catch {
-    return undefined;
-  }
+  try { return (await chrome.storage.local.get(key))[key]; } catch { return undefined; }
 }
 
 async function put(key: string, value: unknown): Promise<void> {
-  try {
-    await chrome.runtime.sendMessage({ to: "sw", type: "e2e-set", key, value });
-  } catch { /* test build only */ }
+  try { await chrome.storage.local.set({ [key]: value }); } catch { /* test build only */ }
 }
 
 async function fakeEnabled(): Promise<boolean> {

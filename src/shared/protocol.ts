@@ -7,6 +7,16 @@ export type Language = "en" | "de" | "es" | "en-IN";
 export type MicPhase = "starting" | "listening" | "paused" | "transcribing";
 /** How a spoken conversation is going (E1 + F1). */
 export type ConversationPhase = "starting" | "listening" | "thinking" | "speaking";
+/** The speech engine runs in the compose iframe (an extension page), because an offscreen document cannot get microphone permission. */
+export type SpeechHostState = "loading" | "listening" | "paused" | "transcribing" | "idle" | "error";
+export type SpeechHostCommand =
+  | { op: "start"; lang: Language }
+  | { op: "stop" }
+  | { op: "pause"; paused: boolean };
+export type SpeechEvent =
+  | { event: "level"; level: number }
+  | { event: "partial"; text: string }
+  | { event: "state"; state: SpeechHostState; detail?: string };
 export interface ConversationState {
   on: boolean;
   phase: ConversationPhase;
@@ -162,6 +172,7 @@ export type ToAgent =
   | { to: "agent"; type: "mic-granted" } // the person allowed the microphone in the small permission window
   | { to: "agent"; type: "conversation-start"; tabId?: number } // the microphone badge on Tusk
   | { to: "agent"; type: "conversation-stop" } // Stop talking, or the badge again
+  | { to: "agent"; type: "speech-event"; event: SpeechEvent } // from the composing iframe, where the microphone lives
   | { to: "agent"; type: "overlay-help"; tabId?: number; overlay: OverlayInfo; url: string } // person accepted help in look-after mode
   | { to: "agent"; type: "log-action"; text: string; failed?: boolean; tabId?: number }; // an action done locally (no model call), shown in the chat log
 
@@ -180,6 +191,7 @@ export type FromAgent =
   | { to: "sw"; type: "mic-level"; level: number; listening: boolean; phase?: MicPhase; progress?: string; text?: string } // live words for the chat box
   | { to: "sw"; type: "conversation-state"; state: ConversationState | null }
   | { to: "sw"; type: "no-voice-noticed" } // remember that the one-time "no voice" note was shown
+  | { to: "sw"; type: "speech-host"; tabId?: number; cmd: SpeechHostCommand } // tell the composing iframe to listen
   | { to: "sw"; type: "open-mic-permission" } // offscreen pages cannot ask for the mic: open a small window that can
   | { to: "sw"; type: "open-url"; tabId: number; url: string; reqId: string }
   | { to: "sw"; type: "get-settings" } // full settings including the key; only the offscreen document may ask
@@ -201,6 +213,7 @@ export type ToContent =
   | { to: "content"; type: "view"; view: ChatView }
   | { to: "content"; type: "mic"; level: number; listening: boolean; phase?: MicPhase; progress?: string; text?: string }
   | { to: "content"; type: "conversation"; state: ConversationState | null }
+  | { to: "content"; type: "speech-host"; cmd: SpeechHostCommand }
   | { to: "content"; type: "speaking"; on: boolean } // read-aloud is playing (Tusk's speaking mood)
   | { to: "content"; type: "settings"; settings: Omit<Settings, "apiKey"> };
 
