@@ -29,3 +29,4 @@ code { overflow-wrap: anywhere; }
 details.steps { border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; margin: 12px 0; }
 details.steps[open] { padding-bottom: 10px; }
 details.steps > summary { font-size: 18px; padding: 8px 0; }
+img.shot.narrow { max-width: 360px; margin-left: auto; margin-right: auto; }
