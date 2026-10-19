@@ -1,19 +1,40 @@
 // The chat's typing box. It runs as an extension page inside an iframe in Tusk's chat, so the
 // website cannot steal its focus or its key presses, and it sends the message straight to the
 // agent through extension messaging: the website can neither read it nor fake it.
+//
+// A1: the microphone sits next to the text box. While listening, the words appear here live, with a
+// two-line hint; nothing is sent until the person presses Send. The overlay tells this frame about the
+// microphone (phase, words, progress) with postMessage.
 import { t } from "../shared/i18n";
-import type { Language, ToAgent } from "../shared/protocol";
+import { FEATURES } from "../shared/features";
+import type { Language, MicPhase, ToAgent } from "../shared/protocol";
 import { SETTINGS_KEY } from "../shared/protocol";
 
 const form = document.getElementById("f") as HTMLFormElement;
 const input = document.getElementById("t") as HTMLInputElement;
-const button = document.getElementById("s") as HTMLButtonElement;
+const sendBtn = document.getElementById("s") as HTMLButtonElement;
+const micBtn = document.getElementById("m") as HTMLButtonElement;
+const hint = document.getElementById("hint") as HTMLElement;
+const h1 = document.getElementById("h1") as HTMLElement;
+const h2 = document.getElementById("h2") as HTMLElement;
+const bar = document.getElementById("bar") as HTMLElement;
+const barFill = bar.querySelector("i") as HTMLElement;
 
-function applyLanguage(lang: Language): void {
-  document.documentElement.lang = lang;
-  input.placeholder = t(lang, "typeShort");
-  input.setAttribute("aria-label", t(lang, "typeHere"));
-  button.textContent = t(lang, "send");
+let lang: Language = "en";
+let listening = false;
+let phase: MicPhase = "listening";
+let progress: string | undefined;
+let sendAfterStop = false;
+let micBusy = false; // mic-start was sent, the engine is not answering yet
+
+function applyLanguage(next: Language): void {
+  lang = next;
+  document.documentElement.lang = next;
+  input.placeholder = t(next, "typeShort");
+  input.setAttribute("aria-label", t(next, "typeHere"));
+  sendBtn.textContent = t(next, "send");
+  micBtn.setAttribute("aria-label", t(next, listening ? "micStop" : "micStart"));
+  renderHint();
 }
 
 async function loadLanguage(): Promise<void> {
@@ -21,13 +42,122 @@ async function loadLanguage(): Promise<void> {
   applyLanguage(stored?.language ?? "en");
 }
 
+/** A new listening session starts with an empty box; afterwards the words stay for checking. */
+function setWords(text: string, replace: boolean): void {
+  if (replace) input.value = text;
+  else if (text) input.value = text;
+}
+
+let sessionWords = false; // the current session has put words in the box
+
+function renderHint(): void {
+  const starting = listening && (phase === "starting" || micBusy);
+  const showBar = starting && !!progress;
+  const hasWords = sendAfterStop || sessionWords || (!listening && input.value.trim().length > 0);
+  hint.hidden = !listening && !hasWords;
+  if (starting) {
+    h1.textContent = t(lang, "capStarting");
+    h2.textContent = progress && progress !== "…" ? progress : "";
+  } else if (listening) {
+    h1.textContent = t(lang, "speakHint1");
+    h2.textContent = t(lang, "speakHint2");
+  } else {
+    h1.textContent = t(lang, "speakCheck1");
+    h2.textContent = t(lang, "speakCheck2");
+  }
+  bar.hidden = !showBar;
+  bar.classList.toggle("indeterminate", showBar && (!progress || !/^\d+%$/.test(progress)));
+  barFill.style.width = progress && /^\d+%$/.test(progress) ? progress : "40%";
+  micBtn.classList.toggle("on", listening);
+  micBtn.textContent = listening ? "■" : "🎤";
+  micBtn.setAttribute("aria-pressed", String(listening));
+  micBtn.setAttribute("aria-label", t(lang, listening ? "micStop" : "micStart"));
+}
+
+function sendToAgent(msg: ToAgent): void {
+  void chrome.runtime.sendMessage(msg).catch(() => undefined);
+}
+
+function startListening(): void {
+  if (listening || micBusy) return;
+  listening = true; // optimistic: the hint appears at once, the engine confirms
+  micBusy = true;
+  input.focus({ preventScroll: true });
+  sendToAgent({ to: "agent", type: "mic-start" });
+  renderHint();
+}
+
+function stopListening(): void {
+  if (!listening || micBusy) return;
+  sendToAgent({ to: "agent", type: "mic-stop" });
+  listening = false;
+  micBusy = false;
+  sessionWords = false;
+  renderHint();
+}
+
+micBtn.addEventListener("click", () => {
+  if (listening) stopListening();
+  else startListening();
+});
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (listening) {
+    // The person pressed Send while still speaking: stop, then send the words that arrive.
+    sendAfterStop = true;
+    stopListening();
+    return;
+  }
   const text = input.value.trim();
   if (!text) return;
   input.value = "";
-  const msg: ToAgent = { to: "agent", type: "user-input", text, via: "chat" };
-  void chrome.runtime.sendMessage(msg).catch(() => undefined);
+  sessionWords = false;
+  sendAfterStop = false;
+  hint.hidden = true;
+  sendToAgent({ to: "agent", type: "user-input", text, via: "chat" });
+});
+
+// The overlay's microphone state (A1): words, phase, pack progress.
+window.addEventListener("message", (e) => {
+  const m = e.data as { __littletusk?: string; listening?: boolean; phase?: MicPhase; progress?: string; text?: string } | undefined;
+  if (!m || m.__littletusk !== "mic") return;
+  const wasListening = listening;
+  const wasBusy = micBusy;
+  listening = m.listening === true;
+  micBusy = false;
+  if (m.phase) phase = m.phase;
+  progress = m.progress;
+  if (listening) {
+    if (!wasListening || wasBusy) {
+      // A new session: live words replace whatever was there.
+      input.value = "";
+      sessionWords = false;
+    }
+    if (typeof m.text === "string" && m.text) {
+      setWords(m.text, true);
+      sessionWords = true;
+    }
+  } else if (typeof m.text === "string" && m.text) {
+    // The final words stay in the box for checking.
+    setWords(m.text, true);
+    sessionWords = true;
+    if (sendAfterStop) {
+      sendAfterStop = false;
+      const text = input.value.trim();
+      if (text) {
+        input.value = "";
+        sessionWords = false;
+        hint.hidden = true;
+        sendToAgent({ to: "agent", type: "user-input", text, via: "voice" });
+        return;
+      }
+    }
+  } else if (!listening && sendAfterStop) {
+    // Nothing was heard: do not send whatever may be typed later.
+    sendAfterStop = false;
+  }
+  renderHint();
 });
 
 // When Tusk opens the chat it focuses this frame; hand that on to the text box.
@@ -38,4 +168,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 void loadLanguage();
+if (!FEATURES.speechInput) { micBtn.hidden = true; hint.hidden = true; }
 document.body.dataset.ready = "1";

@@ -1,5 +1,4 @@
-import { test, expect } from "./fixtures";
-import { FEATURES } from "../../src/shared/features";
+import { test, expect, speechBuild } from "./fixtures";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join, resolve, normalize } from "node:path";
@@ -32,9 +31,9 @@ test("setup link opens the extension setup page and saves on yes", async ({ cont
     expect(page.url()).not.toContain("#lt=");
     await page.locator("#yes").click();
     // After "yes": the microphone step when speaking to Tusk is on, otherwise straight to the done message.
-    await expect(page.locator("#app")).toHaveAttribute("data-view", FEATURES.speechInput ? "mic" : "done");
+    await expect(page.locator("#app")).toHaveAttribute("data-view", speechBuild ? "mic" : "done");
     await expect(page.locator("#doneMsg")).toBeVisible();
-    await expect(page.locator("#micBtn")).toHaveCount(FEATURES.speechInput ? 1 : 0);
+    await expect(page.locator("#micBtn")).toHaveCount(speechBuild ? 1 : 0);
     const stored = await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings);
     expect(stored).toMatchObject({ provider: "anthropic", apiKey: cfg.apiKey, language: "de", mode: "look-after", monthlyLimit: 7, setupDone: true });
   } finally {
@@ -51,7 +50,27 @@ test("family settings form saves and builds a link", async ({ context, extension
   await expect(page.locator("#saveMsg")).toHaveClass("ok");
   const stored = (await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings)) as { apiKey: string };
   expect(stored.apiKey).toBe("sk-ant-form-key-9999");
-  await expect(page.locator("#micBtn")).toHaveCount(FEATURES.speechInput ? 1 : 0); // no microphone section while speech is off
+  await expect(page.locator("#micBtn")).toHaveCount(speechBuild ? 1 : 0); // no microphone section while speech is off
   await page.locator("#makeLink").click();
   await expect(page.locator("#linkOut")).toContainText("https://thejeswi.github.io/littletusk/setup.html#lt=");
+});
+
+test("family settings: the online listener is the family's choice, and voices are listed per language", async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/pages/setup.html`);
+  // C3: the online listener is never on by default and only offered here.
+  await page.locator("#key").fill("sk-ant-form-key-9999");
+  await expect(page.locator("#listenOnline")).not.toBeChecked();
+  await page.locator("#listenOnline").check();
+  await page.locator("#save").click();
+  await expect(page.locator("#saveMsg")).toHaveClass("ok");
+  const stored = (await page.evaluate(async () => (await chrome.storage.local.get("settings")).settings)) as { listenOnline?: boolean };
+  expect(stored.listenOnline).toBe(true);
+  // D3: one line per language, with a voice name or a plain "no voice" note.
+  const voices = page.locator("#voiceList");
+  await expect(voices).toContainText("English");
+  await expect(voices).toContainText("German");
+  await expect(voices).toContainText("Spanish");
+  await expect(voices).toContainText("English (India)");
+  await expect(page.locator("#testVoice")).toBeVisible();
 });

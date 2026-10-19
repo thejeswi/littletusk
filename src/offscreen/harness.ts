@@ -1,9 +1,10 @@
 // The agent: one pi-durable conversation per browser profile, wired to the service worker.
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { createRegistry, Harness, UsageDoc, type Conversation } from "@earendil-works/pi-durable";
-import type { ChatView, FromAgent, PageCommand, PageResult, RelayedToAgent, Settings } from "../shared/protocol";
+import type { ChatItem, ChatView, ConversationPhase, ConversationState, FromAgent, Language, PageCommand, PageResult, RelayedToAgent, Settings, VoiceTest } from "../shared/protocol";
 import { DEFAULT_SETTINGS } from "../shared/protocol";
-import { t } from "../shared/i18n";
+import { LANGUAGE_NAMES, t } from "../shared/i18n";
+import { isJunkTranscript } from "../speech/junk";
 import { openTuskStorage, type TuskStorage } from "../storage/index";
 import { ledgerDelta, monthKey, overLimit, spendNow, totalCost } from "./budget";
 import { asksToDoIt, saysStillBroken } from "./gate";
@@ -15,6 +16,8 @@ import { buildView, explainModelError, throttle, type ViewValueLike } from "./vi
 const ctx = BACKGROUND_CONTEXT;
 const IDLE_RESET_MS = 6 * 3600 * 1000;
 const BROADCAST_MS = 100;
+const conversationSilenceMs = 20_000; // F1: a long silence ends the conversation
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type SwMessage = FromAgent;
 const sendSw = async <T = unknown>(msg: SwMessage): Promise<T | undefined> => {
@@ -38,6 +41,19 @@ interface SpeechLike {
   start(lang: string): Promise<void>;
   stop(): Promise<string>;
   pause(paused: boolean): void;
+  dispose?(): void;
+}
+
+interface ConvState {
+  active: boolean;
+  phase: ConversationPhase;
+  you?: string;
+  tusk?: string;
+  progress?: string;
+  noVoice?: boolean;
+  lastHeard: number;
+  busy: boolean; // a heard sentence is being answered
+  watchdog?: ReturnType<typeof setInterval>;
 }
 
 export class TuskAgent {
@@ -53,7 +69,9 @@ export class TuskAgent {
   private spokenInit = false;
   private scripted: { reload(): Promise<void> } | undefined;
   private speech: SpeechLike | undefined;
-  private micSubmitted = false;
+  private manualMic = false; // the chat box's microphone is on (A1: words go to the box, never sent by themselves)
+  private conv: ConvState = { active: false, phase: "listening", lastHeard: 0, busy: false };
+  private readonly speakWaiters = new Map<string, () => void>();
   private readonly broadcaster = throttle(() => void this.broadcast(), BROADCAST_MS);
   private readonly ledgerSync = throttle(() => void this.syncLedger(), 400);
   private ledgerChain: Promise<void> = Promise.resolve();
@@ -271,7 +289,8 @@ export class TuskAgent {
       for (const i of finished) {
         if (this.spoken.has(i.id)) continue;
         this.spoken.add(i.id);
-        if (this.settings.speakAnswers) void sendSw({ to: "sw", type: "speak", text: i.text, lang: this.settings.language });
+        // In a conversation the answer is spoken by the conversation loop, which then listens again.
+        if (this.settings.speakAnswers && !this.conv.active) void sendSw({ to: "sw", type: "speak", text: i.text, lang: this.settings.language });
       }
     } catch (e) {
       console.warn("[littletusk] broadcast failed", e);
@@ -302,6 +321,14 @@ export class TuskAgent {
         return void this.speech?.pause(msg.paused);
       case "mic-granted":
         return void (await this.micStart(this.taskTab || undefined));
+      case "conversation-start":
+        return void (await this.conversationStart(msg.tabId));
+      case "conversation-stop":
+        return void this.endConversation();
+      case "speak-ended":
+        return void (() => { const done = this.speakWaiters.get(msg.reqId); this.speakWaiters.delete(msg.reqId); done?.(); })();
+      case "no-voice":
+        return void (await this.noteNoVoice(msg.lang));
       case "overlay-help": {
         // The person accepted help with a popup that has no obvious close button.
         if (msg.tabId) await this.update((s) => void (s.taskTabId = msg.tabId!));
@@ -399,8 +426,8 @@ export class TuskAgent {
 
   /** Start a fresh chat: stop what Tusk is doing, forget this conversation and greet again. */
   private async newTopic() {
+    this.endConversation();
     void this.speech?.stop().catch(() => undefined); // end any listening session without sending it
-    this.micSubmitted = true;
     await this.root.abort(ctx); // an answer in progress, queued messages, a pending question
     await this.update((s) => {
       s.grantConfirm = false;
@@ -418,68 +445,216 @@ export class TuskAgent {
 
   // ---------- speech ----------
 
+  private sendMic(level: number, listening: boolean, phase?: "starting" | "listening" | "paused" | "transcribing", progress?: string, text?: string): void {
+    void sendSw({ to: "sw", type: "mic-level", level, listening, phase, progress, text });
+  }
+
   private async loadSpeech(): Promise<SpeechLike | undefined> {
     if (this.speech) return this.speech;
     // Optional: the speech module is built by another part. Without it, the mic says so.
-    const loader = Object.values(import.meta.glob("../speech/index.ts"))[0];
+    const loader = Object.values(import.meta.glob("../speech/select.ts"))[0];
     if (!loader) return undefined;
-    const mod = (await loader()) as { createSpeech(o: unknown): SpeechLike };
-    this.speech = mod.createSpeech({
+    const mod = (await loader()) as { createSpeechAuto(o: unknown): SpeechLike };
+    this.speech = mod.createSpeechAuto({
       wasmBase: chrome.runtime.getURL("wasm/"),
-      onLevel: (level: number) => void sendSw({ to: "sw", type: "mic-level", level, listening: true, phase: "listening" }),
-      onState: (state: string, detail?: string) => {
-        const lang = this.settings.language;
-        if (state === "listening" || state === "paused" || state === "transcribing") {
-          void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: state, progress: state === "transcribing" ? detail : undefined });
-        } else if (state === "loading") {
-          void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: "starting" });
-        } else if (state === "idle" || state === "error") {
-          void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
-          if (state === "idle" && !detail && !this.micSubmitted) {
-            this.micSubmitted = true;
-            void this.notice(t(lang, "noSpeech"));
-          } else if (state === "error" && detail === "MIC_SILENT") void this.notice(t(lang, "micSilent"));
-          else if (state === "error" && detail === "MIC_PERMISSION") {
-            // An offscreen document cannot show the permission prompt; a small extension window can.
-            void this.notice(t(this.settings.language, "micAllow"));
-            void sendSw({ to: "sw", type: "open-mic-permission" });
-          } else if (state === "error") void this.notice(t(lang, "micError"));
-          else if (detail && !this.micSubmitted) {
-            this.micSubmitted = true;
-            void this.userInput(detail, this.taskTab || undefined, "voice");
-          }
-        }
+      online: () => this.settings.listenOnline,
+      onLevel: (level: number) => {
+        if (this.conv.active && level > 0.1) this.conv.lastHeard = Date.now();
+        this.sendMic(level, true, "listening");
       },
+      onPartial: (text: string) => {
+        if (this.conv.active) { this.conv.lastHeard = Date.now(); return; } // captions, not the chat box
+        this.sendMic(0, true, "listening", undefined, text);
+      },
+      onState: (state: string, detail?: string) => this.onSpeechState(state, detail),
     });
     return this.speech;
+  }
+
+  private onSpeechState(state: string, detail?: string): void {
+    const lang = this.settings.language;
+    if (state === "listening" || state === "paused") {
+      this.sendMic(0, true, state);
+      if (this.conv.active) { this.conv.phase = "listening"; this.broadcastConversation(); }
+    } else if (state === "transcribing") {
+      this.sendMic(0, true, "transcribing", detail);
+    } else if (state === "loading") {
+      // B3: the listening pack downloads on first use, with a bar.
+      this.sendMic(0, true, "starting", detail);
+      if (this.conv.active) { this.conv.phase = "starting"; this.conv.progress = detail; this.broadcastConversation(); }
+    } else if (state === "idle") {
+      const wasManual = this.manualMic;
+      this.manualMic = false;
+      this.sendMic(0, false, undefined, undefined, detail);
+      if (this.conv.active) {
+        if (detail) void this.onConversationHeard(detail);
+        return; // the 20-second watchdog ends a conversation nobody speaks in
+      }
+      if (wasManual && !detail) void this.notice(t(lang, "noSpeech"));
+      // A1: nothing is sent here. The words stay in the chat's box until the person presses Send.
+    } else if (state === "error") {
+      this.manualMic = false;
+      this.sendMic(0, false);
+      if (detail === "MIC_SILENT") void this.notice(t(lang, "micSilent"));
+      else if (detail === "MIC_PERMISSION") {
+        // An offscreen document cannot show the permission prompt; a small extension window can.
+        void this.notice(t(lang, "micAllow"));
+        void sendSw({ to: "sw", type: "open-mic-permission" });
+      } else void this.notice(t(lang, "micError"));
+      if (this.conv.active) this.endConversation();
+    }
   }
 
   private async micStart(tabId?: number) {
     await this.loadSettings();
     if (tabId) this.taskTab = tabId;
+    if (this.conv.active) this.endConversation();
     const speech = await this.loadSpeech();
     if (!speech) {
       await this.notice(t(this.settings.language, "micSoon"));
-      void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
+      this.sendMic(0, false);
       return;
     }
-    this.micSubmitted = false;
-    // Show the bubble at once: finding a working microphone takes a moment.
-    void sendSw({ to: "sw", type: "mic-level", level: 0, listening: true, phase: "starting" });
+    this.manualMic = true;
+    // Show the listening state at once: finding a working microphone takes a moment.
+    this.sendMic(0, true, "starting");
     await speech.start(this.settings.language);
   }
 
   private async micStop() {
     const speech = this.speech;
+    this.manualMic = false;
     if (!speech) {
-      void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
+      this.sendMic(0, false);
       return;
     }
     const text = (await speech.stop()).trim();
-    void sendSw({ to: "sw", type: "mic-level", level: 0, listening: false });
-    if (text && !this.micSubmitted) {
-      this.micSubmitted = true;
-      await this.userInput(text, this.taskTab || undefined, "voice");
+    this.sendMic(0, false, undefined, undefined, text);
+  }
+
+  // ---------- hands-free conversation (E1 + F1) ----------
+
+  private conversationState(): ConversationState | null {
+    if (!this.conv.active) return null;
+    return { on: true, phase: this.conv.phase, you: this.conv.you, tusk: this.conv.tusk, progress: this.conv.progress, noVoice: this.conv.noVoice };
+  }
+
+  private broadcastConversation(): void {
+    void sendSw({ to: "sw", type: "conversation-state", state: this.conversationState() });
+  }
+
+  private async conversationStart(tabId?: number): Promise<void> {
+    if (this.conv.active) return;
+    await this.loadSettings();
+    if (tabId) this.taskTab = tabId;
+    const speech = await this.loadSpeech();
+    if (!speech) {
+      await this.notice(t(this.settings.language, "micSoon"));
+      return;
     }
+    // A microphone session started from the chat box is replaced by the conversation.
+    this.manualMic = false;
+    await speech.stop().catch(() => "");
+    this.conv = { active: true, phase: "starting", lastHeard: Date.now(), busy: false };
+    this.broadcastConversation();
+    this.conv.watchdog = setInterval(() => {
+      if (!this.conv.active) return;
+      if (this.conv.phase === "listening" && Date.now() - this.conv.lastHeard >= conversationSilenceMs) this.endConversation();
+    }, 1000);
+    await this.listenForConversation();
+  }
+
+  private async listenForConversation(): Promise<void> {
+    if (!this.conv.active) return;
+    this.conv.phase = "starting";
+    this.conv.progress = undefined;
+    this.conv.lastHeard = Date.now();
+    this.broadcastConversation();
+    await this.speech?.start(this.settings.language);
+  }
+
+  private endConversation(): void {
+    if (!this.conv.active) return;
+    this.conv.active = false;
+    this.conv.busy = false;
+    this.conv.phase = "listening";
+    if (this.conv.watchdog) clearInterval(this.conv.watchdog);
+    this.conv.watchdog = undefined;
+    this.sendMic(0, false);
+    void this.speech?.stop().catch(() => "");
+    this.broadcastConversation();
+  }
+
+  /** One thing was heard in a conversation: drop junk, answer it, speak, then listen again. */
+  private async onConversationHeard(heardText: string): Promise<void> {
+    if (!this.conv.active || this.conv.busy || this.conv.phase !== "listening") return;
+    this.conv.busy = true;
+    const lang = this.settings.language;
+    const heard = heardText.replace(/\s+/g, " ").trim();
+    if (isJunkTranscript(heard, lang)) {
+      this.conv.busy = false;
+      await this.notice(t(lang, "noCatch"));
+      if (this.conv.active) await this.listenForConversation();
+      return;
+    }
+    this.conv.you = heard;
+    this.conv.phase = "thinking";
+    this.broadcastConversation();
+    const before = new Set((await this.buildChatView()).items.map((i) => i.id));
+    await this.userInput(heard, this.taskTab || undefined, "voice");
+    const answer = await this.waitForReply(before);
+    if (!this.conv.active) { this.conv.busy = false; return; }
+    if (answer) {
+      this.conv.tusk = answer;
+      this.conv.phase = "speaking";
+      this.broadcastConversation();
+      await this.speakConversation(answer);
+    }
+    this.conv.busy = false;
+    if (this.conv.active) await this.listenForConversation();
+  }
+
+  /** Waits until Tusk's answer (or a notice) has arrived and the run is over. */
+  private async waitForReply(before: Set<string>): Promise<string> {
+    for (let i = 0; i < 300; i++) {
+      if (!this.conv.active) return "";
+      await sleep(i === 0 ? 400 : 200);
+      const view = await this.buildChatView();
+      if (view.busy) continue;
+      const fresh = [...view.items].reverse().find((it): it is Extract<ChatItem, { kind: "tusk" | "notice" }> =>
+        (it.kind === "tusk" || it.kind === "notice") && !before.has(it.id));
+      if (fresh) return fresh.text;
+      if (i > 25) return ""; // no answer came (for example, the person was told to set Tusk up)
+    }
+    return "";
+  }
+
+  /** Says one answer aloud in a conversation. With no voice, captions stay long enough to read. */
+  private async speakConversation(text: string): Promise<void> {
+    const lang = this.settings.language;
+    const reqId = crypto.randomUUID();
+    const ended = new Promise<void>((resolve) => {
+      this.speakWaiters.set(reqId, resolve);
+      setTimeout(() => { this.speakWaiters.delete(reqId); resolve(); }, 30_000);
+    });
+    const r = await sendSw<VoiceTest>({ to: "sw", type: "speak", text, lang, reqId });
+    if (r && "none" in r) {
+      this.conv.noVoice = true;
+      this.broadcastConversation();
+      await this.noteNoVoice(lang);
+      // No voice: let the person read the captions before listening again.
+      await sleep(Math.min(6000, 1500 + text.length * 40));
+      this.speakWaiters.delete(reqId);
+      return;
+    }
+    await ended;
+  }
+
+  /** The one-time note when this computer has no voice for the language. */
+  private async noteNoVoice(lang: Language): Promise<void> {
+    if (this.settings.noVoiceNoticed) return;
+    this.settings = { ...this.settings, noVoiceNoticed: true };
+    await sendSw({ to: "sw", type: "no-voice-noticed" });
+    await this.notice(t(lang, "noVoice", { language: LANGUAGE_NAMES[lang] ?? lang }));
   }
 }

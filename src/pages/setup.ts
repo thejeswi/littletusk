@@ -1,4 +1,4 @@
-import { type Language, type Mode, type Settings } from "../shared/protocol";
+import { type Language, type Mode, type Settings, type VoiceList, type VoiceTest } from "../shared/protocol";
 import { FEATURES } from "../shared/features";
 import { PROVIDERS, modelsFor, providerInfo } from "../shared/providers";
 import { keyMismatch } from "../shared/key-hint";
@@ -30,6 +30,18 @@ const S = {
     currency: "Currency",
     modeShow: "Show me how", modeLook: "Look after me",
     speak: "Read answers aloud",
+    listeningTitle: "Listening",
+    listeningOnDevice: "Listening happens on this computer. Nothing leaves it.",
+    listenOnline: "Allow the browser's online listener as a backup. The voice is sent to Google.",
+    readAloudTitle: "Read answers aloud",
+    testVoice: "🔊 Test voice",
+    voicesTitle: "Voices on this computer",
+    voiceHeardOnline: "Did you hear me? Voice: {name} (online).",
+    voiceHeardLocal: "Did you hear me? Voice: {name} (on this computer).",
+    voiceNone: "This computer has no voice for {language}.",
+    voiceNoVoice: "no voice on this computer",
+    voiceOnlineTag: "online",
+    voiceLocalTag: "on this computer",
     firstName: "The person's first name (optional)",
     keyMismatch: "But this key looks like a {key} key, and the provider is {selected}. Please choose {key} above, or paste a {selected} key.",
     keySaved: "key saved",
@@ -64,6 +76,18 @@ const S = {
     currency: "Währung",
     modeShow: "Zeig mir, wie", modeLook: "Pass auf mich auf",
     speak: "Antworten vorlesen",
+    listeningTitle: "Zuhören",
+    listeningOnDevice: "Das Zuhören geschieht auf diesem Computer. Nichts verlässt ihn.",
+    listenOnline: "Den Online-Zuhörer des Browsers als Ersatz erlauben. Die Stimme wird an Google gesendet.",
+    readAloudTitle: "Antworten vorlesen",
+    testVoice: "🔊 Stimme testen",
+    voicesTitle: "Stimmen auf diesem Computer",
+    voiceHeardOnline: "Haben Sie mich gehört? Stimme: {name} (online).",
+    voiceHeardLocal: "Haben Sie mich gehört? Stimme: {name} (auf diesem Computer).",
+    voiceNone: "Dieser Computer hat keine Stimme für {language}.",
+    voiceNoVoice: "keine Stimme auf diesem Computer",
+    voiceOnlineTag: "online",
+    voiceLocalTag: "auf diesem Computer",
     firstName: "Vorname der Person (optional)",
     keyMismatch: "Aber dieser Schlüssel sieht nach {key} aus, eingestellt ist {selected}. Bitte wählen Sie oben {key} oder fügen Sie einen {selected}-Schlüssel ein.",
     keySaved: "Schlüssel gespeichert",
@@ -169,6 +193,46 @@ function wireMic(): void {
   };
 }
 
+/** C3 and D3: the family's listening choice, Test voice, and one line of voice per language. */
+function wireVoiceSettings(): void {
+  const tr = t();
+  const fill = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (m, k: string) => vars[k] ?? m);
+  const langName = (lang: Language) => tr.langNames[lang] ?? lang;
+  const out = $("voiceOut");
+  const list = $("voiceList");
+  const say = async (lang: Language): Promise<void> => {
+    out.className = "";
+    out.textContent = "…";
+    try {
+      const r = (await chrome.runtime.sendMessage({ to: "sw", type: "test-voice", lang })) as VoiceTest | undefined;
+      if (!r || "none" in r) {
+        out.className = "warn";
+        out.textContent = fill(tr.voiceNone, { language: langName(lang) });
+      } else {
+        out.className = "ok";
+        out.textContent = fill(r.voice.online ? tr.voiceHeardOnline : tr.voiceHeardLocal, { name: r.voice.name });
+      }
+    } catch {
+      out.className = "warn";
+      out.textContent = fill(tr.voiceNone, { language: langName(lang) });
+    }
+  };
+  $("testVoice").onclick = () => void say($<HTMLSelectElement>("language").value as Language);
+  void (async () => {
+    try {
+      const map = (await chrome.runtime.sendMessage({ to: "sw", type: "list-voices" })) as VoiceList | undefined;
+      if (!map) return;
+      list.innerHTML = (["en", "de", "es", "en-IN"] as Language[]).map((lang) => {
+        const v = map[lang];
+        const name = esc(langName(lang));
+        return v
+          ? `<div><b>${name}:</b> ${esc(v.name)} (${esc(v.online ? tr.voiceOnlineTag : tr.voiceLocalTag)})</div>`
+          : `<div><b>${name}:</b> <span class="err">${esc(tr.voiceNoVoice)}</span></div>`;
+      }).join("");
+    } catch { /* no voices to list */ }
+  })();
+}
+
 function renderMic(afterSetup: boolean): void {
   app.innerHTML = (afterSetup ? `<section><h2 id="doneMsg">${esc(t().done)}</h2></section>` : "") + micSection() +
     (afterSetup ? `<p>${esc(t().finish)}</p>` : "");
@@ -201,6 +265,15 @@ async function renderForm(): Promise<void> {
     <div class="row"><label class="field">${tr.language_}<select id="language">${(["en", "de", "es", "en-IN"] as Language[]).map((l) => opt(l, tr.langNames[l], l === s.language)).join("")}</select></label>
       <label class="field">${tr.mode}<select id="mode">${(["show", "look-after"] as Mode[]).map((m) => opt(m, tr.modes[m], m === s.mode)).join("")}</select></label></div>
     <label class="check"><input id="speak" type="checkbox"${s.speakAnswers ? " checked" : ""}>${tr.speak}</label>
+    <fieldset class="fam" id="speechSettings">
+      <legend>${tr.listeningTitle}</legend>
+      <p class="hint">${tr.listeningOnDevice}</p>
+      <label class="check"><input id="listenOnline" type="checkbox"${s.listenOnline ? " checked" : ""}>${tr.listenOnline}</label>
+      <h3>${tr.readAloudTitle}</h3>
+      <div class="buttons"><button type="button" id="testVoice" class="secondary">${tr.testVoice}</button></div>
+      <p id="voiceOut" role="status"></p>
+      <div id="voiceList" class="hint"></div>
+    </fieldset>
     <label class="field">${tr.firstName}<input id="name" type="text" maxlength="60" value="${esc((s as Settings & { name?: string }).name ?? "")}"></label>
     <div class="buttons"><button id="save">${tr.save}</button></div><p id="saveMsg" role="status"></p></section>
     <section id="linkSection"><h2>${tr.linkTitle}</h2><p>${tr.linkText}</p>
@@ -208,6 +281,7 @@ async function renderForm(): Promise<void> {
       <div class="buttons"><button id="makeLink">${tr.makeLink}</button><button id="copyLink" class="secondary">${tr.copy}</button></div>
       <p id="linkOut" class="linkbox" hidden></p><p id="copyMsg" role="status" class="ok"></p></section>` + micSection();
   wireMic();
+  wireVoiceSettings();
   const provider = $<HTMLSelectElement>("provider");
   const fillModels = (model: string, strong: string) => {
     $("model").innerHTML = modelOptions(provider.value, model);
@@ -256,7 +330,8 @@ async function renderForm(): Promise<void> {
     await saveSettings({
       provider: c.provider, apiKey: c.apiKey, model: c.model!, strongModel: c.strongModel!,
       language: c.language, mode: c.mode, monthlyLimit: c.monthlyLimit, currency: c.currency,
-      speakAnswers: $<HTMLInputElement>("speak").checked, setupDone: true,
+      speakAnswers: $<HTMLInputElement>("speak").checked, listenOnline: $<HTMLInputElement>("listenOnline").checked,
+      packPolicy: "auto", setupDone: true,
       ...(c.name !== undefined ? { name: c.name } : { name: "" }),
     } as Partial<Settings>, others);
     Object.assign(saved, others, c.apiKey ? { [c.provider]: c.apiKey } : {});

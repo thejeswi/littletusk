@@ -1,6 +1,6 @@
 // On-page overlay: the floating baby elephant "Tusk", its chat, settings and target marks. Clicking Tusk opens the chat.
 // Everything lives in one closed shadow root so page CSS cannot touch it.
-import type { ChatItem, ChatView, Language, MicPhase, Mode, Settings } from "../../shared/protocol";
+import type { ChatItem, ChatView, ConversationState, Language, MicPhase, Mode, Settings, VoiceTest } from "../../shared/protocol";
 import { LANGUAGE_NAMES, TABLES, t, type I18nKey } from "../../shared/i18n";
 import { CSS } from "./styles";
 import { FEATURES } from "../../shared/features";
@@ -19,16 +19,23 @@ export interface OverlayCallbacks {
   onTuck(scope: "site" | "hour"): void;
   onOpenFamilySettings(): void;
   onAcceptOverlayHelp(overlayId: string): void;
+  onConversationStart(): void; // the microphone badge on Tusk
+  onConversationStop(): void; // Stop talking, or the badge again
+  onTestVoice(): void; // Tusk settings: say a sentence and name the voice
 }
 
 export interface OverlayController {
   setView(view: ChatView): void;
   setSettings(s: PublicSettings): void;
-  setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string): void;
+  setMic(level: number, listening: boolean, phase?: MicPhase, progress?: string, text?: string): void;
+  /** E1 + F1: the spoken conversation is on (or off with null). */
+  setConversation(state: ConversationState | null): void;
   /** Explicit mood. hello, done and sorry play once and fall back; the others stay until setMood("idle"). */
   setMood(m: Mood): void;
   /** Read-aloud is playing. */
   setSpeaking(on: boolean): void;
+  /** The answer to Test voice (null: none). */
+  setVoiceTest(result: VoiceTest | null): void;
   say(text: string): void;
   pointAt(el: Element, say: string): void;
   spotlight(el: Element, say: string): void;
@@ -114,7 +121,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   let lastMarkKey = "";
   let viewSeen = false;
   let micLive = false; // listening bubble is up and not transcribing
+  let conversation: ConversationState | null = null;
   let speakingOn = false;
+  let speechText = ""; // live words, forwarded to the chat's typing box
   let forced: Mood | null = null; // from setMood
   let oneShot: Mood | null = null;
   let oneShotTimer: ReturnType<typeof setTimeout> | undefined;
@@ -152,10 +161,19 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const point = h("div", "pose-point"); point.innerHTML = POINT_SVG;
   breathe.append(rest, point);
   // Moods: one class on the button (m-listening ...), CSS does the moving.
+  // "Clicked {name}": the words before and after the name differ by language, so match both ends.
   const doneTexts = (["actClicked", "actClosed"] as const).flatMap((k) =>
-    Object.values(TABLES).map((tb) => (tb[k] as string).split("{name}")[0]));
+    Object.values(TABLES).map((tb) => {
+      const [before = "", after = ""] = (tb[k] as string).split("{name}");
+      return { before, after };
+    }));
+  // The person not being heard is not Tusk's failure: no drooping "sorry" for these notices.
+  const notSorry = (["noSpeech", "noCatch"] as const).flatMap((k) => Object.values(TABLES).map((tb) => tb[k] as string));
   const baseMood = (): Mood =>
-    micLive || forced === "listening" ? "listening"
+    conversation?.phase === "speaking" ? "speaking"
+    : conversation?.phase === "thinking" ? "thinking"
+    : conversation?.phase === "listening" || conversation?.phase === "starting" ? "listening"
+    : micLive || forced === "listening" ? "listening"
     : speakingOn || forced === "speaking" ? "speaking"
     : view?.busy || forced === "thinking" ? "thinking" : "idle";
   function applyMood() {
@@ -178,10 +196,10 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
         actionSeen.set(it.id, it.state);
         if (!viewSeen || was === it.state) continue;
         if (it.state === "failed") mood = "sorry";
-        else if (it.state === "done" && mood !== "sorry" && doneTexts.some((d) => it.text.startsWith(d))) mood = "done";
+        else if (it.state === "done" && mood !== "sorry" && doneTexts.some((d) => it.text.startsWith(d.before) && it.text.endsWith(d.after) && it.text.length >= d.before.length + d.after.length)) mood = "done";
       } else if (it.kind === "notice" && !noticesSeen.has(it.id)) {
         noticesSeen.add(it.id);
-        if (viewSeen) mood = "sorry";
+        if (viewSeen && !notSorry.some((n) => it.text.startsWith(n))) mood = "sorry";
       }
     }
     if (mood) playOnce(mood); else applyMood();
@@ -241,16 +259,25 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const composeUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/compose.html") : "about:blank";
   const composeFrame = h("iframe", "compose-frame", { src: composeUrl, allowtransparency: "true" });
   label(composeFrame, "typeHere", "title");
-  const micBtn = h("button", "mic", { type: "button" }, "🎤");
-  bind(() => micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart")));
+  // The microphone button and the live words live inside the typing box (A1).
   const foot = h("div", "foot");
   chatEl.append(
     h("div", "head", undefined, chatTitle, h("div", "head-right", undefined, chatNew, chatSettings), chatClose),
     list,
-    h("div", "compose", undefined, composeFrame, ...(FEATURES.speechInput ? [micBtn] : [])),
+    h("div", "compose", undefined, composeFrame),
     foot,
   );
-  micBtn.addEventListener("click", () => toggleMic());
+
+  // The microphone badge on Tusk (E1): a small round badge with a big, unsteady-hands-friendly hit area.
+  const talkBtn = h("button", "talk", { type: "button" });
+  const talkDot = h("span", "dot", { "aria-hidden": "true" }, "🎤");
+  talkBtn.append(talkDot);
+  talkBtn.hidden = !FEATURES.speechInput;
+  bind(() => talkBtn.setAttribute("aria-label", t(lang(), conversation?.on ? "stopTalking" : "speakWithTusk")));
+  talkBtn.addEventListener("click", () => { if (conversation?.on) cb.onConversationStop(); else cb.onConversationStart(); });
+
+  // The captions bubble of a spoken conversation (F1).
+  const capsEl = h("div", "caps", { role: "status" }); capsEl.hidden = true;
 
   // settings panel
   const setEl = h("div", "panel"); setEl.hidden = true;
@@ -276,6 +303,16 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   const speakChk = h("input", "", { type: "checkbox" });
   const speakTxt = h("span"); label(speakTxt, "readAloud");
   speakChk.addEventListener("change", () => changeSettings({ speakAnswers: speakChk.checked }));
+  const testVoiceBtn = h("button", "act test-voice", { type: "button" });
+  label(testVoiceBtn, "testVoice");
+  const voiceLine = h("p", "voice-line", { role: "status" });
+  voiceLine.hidden = true;
+  testVoiceBtn.addEventListener("click", () => {
+    voiceLine.hidden = false;
+    voiceLine.className = "voice-line";
+    voiceLine.textContent = "…";
+    cb.onTestVoice();
+  });
   const act = (key: I18nKey, fn: () => void) => {
     const b = h("button", "act", { type: "button" }); label(b, key);
     b.addEventListener("click", fn);
@@ -287,7 +324,8 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     h("div", "set", undefined,
       h("label", "f", undefined, langLabelTxt, langSel),
       h("div", "modes", { role: "radiogroup" }, modeLabelTxt, ...modeCards),
-      h("label", "toggle", undefined, speakChk, speakTxt),
+      h("div", "speak-row", undefined, h("label", "toggle", undefined, speakChk, speakTxt), testVoiceBtn),
+      voiceLine,
       act("newTopic", () => { setPanel("chat"); ctrl.clear(); hideBubble(); cb.onNewTopic(); }),
       act("hideSite", () => tuckAndHide("site")),
       act("hideHour", () => tuckAndHide("hour")),
@@ -295,7 +333,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     ),
   );
 
-  layer.append(dim, hl, askFrame, bubbleEl, chatEl, setEl, tusk, listenEl);
+  layer.append(dim, hl, askFrame, bubbleEl, chatEl, setEl, tusk, listenEl, capsEl, talkBtn);
 
   // keep keystrokes and Escape inside the overlay away from the page
   for (const ev of ["keydown", "keyup", "keypress"] as const) {
@@ -315,14 +353,17 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     binds.forEach((f) => f());
     langSel.value = settings.language;
     speakChk.checked = settings.speakAnswers;
+    voiceLine.hidden = true;
     modeCards.forEach((c) => c.setAttribute("aria-checked", String(c.dataset.mode === settings.mode)));
     renderChat();
     renderBubble();
+    renderConversation();
     layout();
   }
 
   // ---------- panels ----------
   function setPanel(p: Panel) {
+    const openedChat = p === "chat" && panel !== "chat";
     panel = p;
     chatEl.hidden = p !== "chat";
     setEl.hidden = p !== "settings";
@@ -332,7 +373,10 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       renderChat();
       scrollDown();
       composeFrame.focus(); // the person just asked for the chat; the frame hands focus to its text box
+      postCompose(); // the typing box may have loaded after the last microphone update
+      if (openedChat) playOnce("hello");
     }
+    applyMic();
     layout();
   }
   function closeTransient() {
@@ -351,9 +395,9 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     applyMic();
   }
   function applyMic() {
-    micBtn.classList.toggle("on", listening);
-    micBtn.setAttribute("aria-label", t(lang(), listening ? "micStop" : "micStart"));
-    listenEl.hidden = !listening;
+    // The chat's typing box (A1) shows the microphone and the hints itself; the floating bubble is
+    // for listening started elsewhere. A spoken conversation shows captions instead.
+    listenEl.hidden = !listening || panel === "chat" || !!conversation?.on;
     const paused = micPhase === "paused";
     listenTxt.textContent = t(lang(), paused ? "micPausedTitle" : micPhase === "transcribing" ? "transcribing"
       : micPhase === "starting" ? "micStarting" : "listening");
@@ -365,7 +409,53 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     micSwitch.disabled = micPhase === "transcribing" || micPhase === "starting";
     stopBtn.disabled = micPhase === "transcribing";
     listenEl.classList.toggle("paused", paused);
+    postCompose();
     layout();
+  }
+
+  /** Tells the typing-box frame about the microphone (A1): live words, phase and progress. */
+  function postCompose() {
+    const w = composeFrame.contentWindow;
+    if (!w) return;
+    try {
+      w.postMessage({ __littletusk: "mic", listening, phase: micPhase, progress: micProgress, text: speechText }, "*");
+    } catch { /* the frame is not ready */ }
+  }
+  composeFrame.addEventListener("load", () => postCompose());
+
+  // ---------- the spoken conversation (E1 + F1) ----------
+  function renderConversation() {
+    const on = !!conversation?.on;
+    talkBtn.classList.toggle("on", on);
+    talkDot.textContent = on ? "■" : "🎤";
+    talkBtn.setAttribute("aria-label", t(lang(), on ? "stopTalking" : "speakWithTusk"));
+    capsEl.hidden = !on;
+    if (!on || !conversation) {
+      capsEl.replaceChildren();
+      applyMic();
+      return;
+    }
+    const c = conversation;
+    const kids: HTMLElement[] = [];
+    if (c.you) kids.push(h("div", "cap-line", undefined, h("b", "who", undefined, t(lang(), "youSaid")), " " + c.you));
+    if (c.tusk) kids.push(h("div", "cap-line", undefined, h("b", "who", undefined, t(lang(), "tuskSaid")), " " + c.tusk));
+    const status = c.phase === "speaking" ? t(lang(), "capSpeaking")
+      : c.phase === "thinking" ? t(lang(), "capThinking")
+      : c.phase === "starting" ? t(lang(), "capStarting") : t(lang(), "capListening");
+    kids.push(h("div", "cap-status", undefined, status + (c.phase === "starting" && c.progress && c.progress !== "…" ? " " + c.progress : "")));
+    if (c.phase === "starting") {
+      const bar = h("div", "bar");
+      const fill = h("i");
+      if (c.progress && /^\d+%$/.test(c.progress)) fill.style.width = c.progress;
+      else bar.classList.add("indeterminate");
+      bar.append(fill);
+      kids.push(bar);
+    }
+    const stop = h("button", "btn stop", { type: "button" }, "■ " + t(lang(), "stopTalking"));
+    stop.addEventListener("click", () => cb.onConversationStop());
+    kids.push(h("div", "cap-actions", undefined, stop));
+    capsEl.replaceChildren(...kids);
+    applyMic();
   }
 
   // ---------- chat rendering ----------
@@ -541,6 +631,10 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     }
     lastPos = pos;
     put(tusk, p.x, p.y);
+    if (!talkBtn.hidden) {
+      // E1: a 48 px hit area hanging off Tusk's lower right, the round badge inside it.
+      put(talkBtn, clamp(p.x + S - 22, 4, Math.max(4, vw() - 48 - 4)), clamp(p.y + S - 20, 4, Math.max(4, vh() - 48 - 4)));
+    }
     const pointing = !!tuskTarget;
     tusk.classList.toggle("pointing", pointing);
     flipEl.classList.toggle("left", pointing && tuskTarget!.flip);
@@ -576,7 +670,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
 
     // panels
     if (!chatEl.hidden) placePanel(chatEl, 380, 540);
-    if (!setEl.hidden) placePanel(setEl, 340, 660);
+    if (!setEl.hidden) placePanel(setEl, 340, 700);
     const panelBox = !chatEl.hidden ? boxRect(chatEl) : !setEl.hidden ? boxRect(setEl) : null;
     if (panelBox) avoid.push(panelBox);
 
@@ -587,6 +681,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     }
     placeBubbleLike(bubbleEl, avoid, prefer, mark?.cont ? [mark.cont] : []);
     placeBubbleLike(listenEl, avoid);
+    placeBubbleLike(capsEl, avoid);
   }
 
   /** Where Tusk should stand to point at a rect: beside it, never on top of it. */
@@ -687,8 +782,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
   tusk.addEventListener("pointercancel", endDrag);
   tusk.addEventListener("click", () => {
     if (suppressClick) return;
-    setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat
-    playOnce("hello");
+    setPanel(panel === "chat" ? null : "chat"); // Tusk always opens the chat (and greets with a hello mood)
   });
   window.addEventListener("resize", onResize);
   function onResize() { lastMarkKey = ""; layout(); }
@@ -727,11 +821,13 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       viewSeen = true;
     },
     setSettings(s) { settings = { ...s }; applySettings(); },
-    setMic(level, l, ph, progress) {
+    setMic(level, l, ph, progress, text) {
       listening = l;
       if (ph) micPhase = ph;
       else if (!l) micPhase = "listening";
-      micProgress = ph === "transcribing" ? progress : undefined;
+      micProgress = ph === "transcribing" || ph === "starting" ? progress : undefined;
+      if (text !== undefined) speechText = text;
+      else if (!l || ph === "starting") speechText = ""; // a new session starts with no stale words
       micLive = l && micPhase !== "transcribing";
       applyMood();
       phase += 1;
@@ -741,6 +837,10 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       });
       applyMic();
     },
+    setConversation(state) {
+      conversation = state && state.on ? state : null;
+      renderConversation();
+    },
     setMood(m) {
       if (m === "hello" || m === "done" || m === "sorry") { playOnce(m); return; }
       clearTimeout(oneShotTimer); oneShot = null;
@@ -748,6 +848,18 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
       applyMood();
     },
     setSpeaking(on) { speakingOn = on; applyMood(); },
+    setVoiceTest(result) {
+      if (!result) { voiceLine.hidden = true; return; }
+      voiceLine.hidden = false;
+      if ("none" in result) {
+        voiceLine.className = "voice-line warn";
+        voiceLine.textContent = t(lang(), "voiceNone", { language: LANGUAGE_NAMES[lang()] ?? lang() });
+      } else {
+        voiceLine.className = "voice-line ok";
+        voiceLine.textContent = t(lang(), result.voice.online ? "voiceHeardOnline" : "voiceHeardLocal", { name: result.voice.name });
+      }
+      layout();
+    },
     say(text) { showBubble({ text, src: "say" }, 12000); },
     pointAt(el, say) { startMark(el, "point", say, "point"); },
     spotlight(el, say) { startMark(el, "spot", say, "point"); },

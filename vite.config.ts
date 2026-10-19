@@ -10,7 +10,7 @@ import { resolve } from "node:path";
 export default defineConfig(({ mode }) => ({
   root: "src",
   // __E2E__ is true only in `vite build --mode e2e` (dist-e2e/), where the faux provider is bundled.
-  define: { __E2E__: JSON.stringify(mode === "e2e"), __SPEECH__: JSON.stringify(process.env.LITTLETUSK_SPEECH === "1") },
+  define: { __E2E__: JSON.stringify(mode === "e2e"), __SPEECH__: JSON.stringify(mode === "e2e" ? process.env.LITTLETUSK_SPEECH === "1" : true) },
   base: "./",
   publicDir: false,
   build: {

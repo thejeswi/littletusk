@@ -1,6 +1,6 @@
 {
   "name": "littletusk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "author": "Thejeswi Preetham",
@@ -17,7 +17,7 @@
     "scenarios:live": "npm run build:e2e && LITTLETUSK_LIVE=1 playwright test -c playwright.scenarios.config.ts",
     "check-clean": "bash scripts/check-clean.sh",
     "store-assets": "node scripts/store-assets.mjs",
-    "screenshots": "npm run build:e2e && playwright test -c playwright.screenshots.config.ts && node scripts/site-images.mjs",
+    "screenshots": "npm run build:e2e:speech && LITTLETUSK_SPEECH=1 playwright test -c playwright.screenshots.config.ts && node scripts/site-images.mjs",
     "check:store": "node scripts/check-store-ready.mjs"
   },
   "dependencies": {

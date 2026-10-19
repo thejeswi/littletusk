@@ -18,6 +18,7 @@ beforeEach(() => {
   cb = {
     onAnswer: vi.fn(), onMicStart: vi.fn(), onMicStop: vi.fn(), onMicPause: vi.fn(), onNewTopic: vi.fn(),
     onSettingsChange: vi.fn(), onTuck: vi.fn(), onOpenFamilySettings: vi.fn(), onAcceptOverlayHelp: vi.fn(),
+    onConversationStart: vi.fn(), onConversationStop: vi.fn(), onTestVoice: vi.fn(),
   };
   ctrl = mountOverlay(cb, settings);
 });
@@ -116,7 +117,66 @@ describe("overlay", () => {
   it("shows the listening bubble", () => {
     ctrl.setMic(0.5, true);
     expect(q<HTMLElement>(".listen").hidden).toBe(false);
+    expect(q("button.tusk").classList.contains("m-listening")).toBe(true);
     ctrl.setMic(0, false);
     expect(q<HTMLElement>(".listen").hidden).toBe(true);
+  });
+
+  it("changes Tusk's mood, and a one-shot mood falls back to idle", () => {
+    vi.useFakeTimers();
+    try {
+      ctrl.setMood("thinking");
+      expect(q("button.tusk").classList.contains("m-thinking")).toBe(true);
+      ctrl.setMood("idle");
+      ctrl.setMood("hello");
+      expect(q("button.tusk").classList.contains("m-hello")).toBe(true);
+      vi.advanceTimersByTime(1800);
+      expect(q("button.tusk").classList.contains("m-idle")).toBe(true);
+      ctrl.setSpeaking(true);
+      expect(q("button.tusk").classList.contains("m-speaking")).toBe(true);
+      ctrl.setSpeaking(false);
+      expect(q("button.tusk").classList.contains("m-idle")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows the captions of a spoken conversation, and its Stop button and badge end it", () => {
+    ctrl.setConversation({ on: true, phase: "speaking", you: "where do I log in", tusk: "See the button I lit up." });
+    const caps = q<HTMLElement>(".caps");
+    expect(caps.hidden).toBe(false);
+    expect(caps.textContent).toContain("You:");
+    expect(caps.textContent).toContain("where do I log in");
+    expect(caps.textContent).toContain("Tusk:");
+    expect(caps.textContent).toContain("Speaking");
+    expect(q("button.talk").classList.contains("on")).toBe(true);
+    q<HTMLButtonElement>(".caps .btn.stop").click();
+    expect(cb.onConversationStop).toHaveBeenCalled();
+    q<HTMLButtonElement>("button.talk").click();
+    expect(cb.onConversationStop).toHaveBeenCalledTimes(2);
+    ctrl.setConversation(null);
+    expect(caps.hidden).toBe(true);
+    q<HTMLButtonElement>("button.talk").click();
+    expect(cb.onConversationStart).toHaveBeenCalled();
+  });
+
+  it("names the voice after Test voice, and says plainly when there is none", () => {
+    q<HTMLButtonElement>("button.tusk").click();
+    const line = q<HTMLElement>(".voice-line");
+    expect(line.hidden).toBe(true);
+    ctrl.setVoiceTest({ voice: { name: "Google US English", online: true } });
+    expect(line.hidden).toBe(false);
+    expect(line.textContent).toContain("Google US English");
+    expect(line.textContent).toContain("online");
+    ctrl.setVoiceTest({ none: true });
+    expect(line.textContent).toContain("no voice");
+    expect(line.textContent).toContain("English");
+  });
+
+  it("the microphone badge and the mood overlays exist only when speaking is on", () => {
+    // Unit tests build with __SPEECH__ off (vitest.config.ts); the badge stays hidden and the typing box has no microphone.
+    expect(q<HTMLElement>("button.talk").hidden).toBe(true);
+    expect(q(".compose .mic")).toBeNull();
+    expect(q(".compose iframe").getAttribute("src")).toBeTruthy();
   });
 });

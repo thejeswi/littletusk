@@ -77,15 +77,30 @@ export async function packState(lang: Language): Promise<PackState> {
   }
 }
 
-/** Download the on-device language pack. Resolves true when it is ready. */
-export async function installPackFor(lang: Language): Promise<boolean> {
+/** Download the on-device language pack, reporting progress while it runs. Resolves true when it is ready. */
+export async function installPackFor(lang: Language, onProgress?: (progress: string) => void): Promise<boolean> {
   const SR = recognizerCtor();
   if (!SR || typeof SR.install !== "function") return false;
+  let done = false;
+  // The browser gives no byte count; poll the pack state so the UI can show a bar while it works.
+  const poll = (async () => {
+    while (!done) {
+      await new Promise((r) => setTimeout(r, 400));
+      if (done) return;
+      const s = await packState(lang);
+      if (s === "available") { onProgress?.("100%"); return; }
+      onProgress?.("…");
+    }
+  })();
   try {
     await SR.install({ langs: [recognitionLang(lang)], processLocally: true });
   } catch {
+    done = true;
+    await poll;
     return false;
   }
+  done = true;
+  await poll;
   return (await packState(lang)) === "available";
 }
 
@@ -119,6 +134,8 @@ export function createBrowserSpeech(opts: BrowserSpeechOptions) {
     if (!opts.online) {
       try { r.processLocally = true; } catch { /* older browsers: the check below catches it */ }
       if (r.processLocally !== true) return void fail("BROWSER_FAILED:no-on-device");
+    } else {
+      try { r.processLocally = false; } catch { /* older browsers always use the online listener */ }
     }
     rec = r;
     r.onstart = () => { if (rec === r && active && !paused) opts.onState("listening"); };
@@ -223,7 +240,6 @@ export function createBrowserSpeech(opts: BrowserSpeechOptions) {
   function watch(): void {
     const guard = new SilenceGuard();
     const buf = new Float32Array(2048);
-    let acc = 0;
     timer = setInterval(() => {
       if (!active) return;
       if (Date.now() - startedAt >= MAX_SECONDS * 1000 || (lastHeard && Date.now() - lastHeard >= SILENCE_SECONDS * 1000 && text())) { void finish(); return; }
@@ -232,9 +248,7 @@ export function createBrowserSpeech(opts: BrowserSpeechOptions) {
       let peak = 0;
       for (const v of buf) peak = Math.max(peak, Math.abs(v));
       if (guard.push(peak, Date.now())) return fail(DEFAULT_MIC_SILENT);
-      acc++;
       opts.onLevel(levelFromRms(rms(buf)));
-      void acc;
     }, 50);
   }
 
@@ -253,6 +267,7 @@ export function createBrowserSpeech(opts: BrowserSpeechOptions) {
     const g = await openGuard();
     if (!active) { teardown(); return; }
     if (g === "denied") return void fail("MIC_PERMISSION");
+    if (g === "none") return void fail("MIC_UNAVAILABLE");
     watch();
     launch(lang);
   }

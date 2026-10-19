@@ -103,6 +103,30 @@ button.tusk.pointing .pose-point{display:block}
 .wave{display:flex;align-items:center;gap:5px;height:44px}
 .wave i{display:block;width:7px;height:8px;border-radius:4px;background:#2f9e6d;transition:height .12s}
 
+/* E1: the microphone badge on Tusk. 30 px visible, 48 px to click or tap. */
+button.talk{position:fixed;z-index:3;width:48px;height:48px;padding:0;border:0;background:transparent;cursor:pointer;
+  /* only a 44 px circle around the visible dot is clickable, so Tusk's body behind it stays clickable too */
+  clip-path:circle(22px at calc(100% - 19px) calc(100% - 19px))}
+button.talk .dot{position:absolute;right:4px;bottom:4px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  background:#fff;border:2px solid #2f9e6d;color:#1f2933;font-size:14px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+button.talk.on .dot{background:#b42318;border-color:#b42318;color:#fff;box-shadow:0 0 0 6px rgba(180,35,24,.18)}
+button.talk:focus-visible{outline:none}
+button.talk:focus-visible .dot{outline:3px solid #ffb703;outline-offset:3px}
+
+/* F1: captions of a spoken conversation. */
+.caps{position:fixed;z-index:2;width:min(260px,calc(100vw - 24px));background:#fff;border:2px solid #99bbbb;border-radius:16px;
+  padding:10px 12px;font-size:15px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.18);
+  transition:left .6s ease-in-out,top .6s ease-in-out}
+.caps .cap-line{overflow-wrap:anywhere;margin-bottom:4px}
+.caps .who{font-weight:700}
+.caps .cap-status{color:#52606d;margin-top:6px}
+.caps .bar{height:8px;border-radius:4px;background:#e3e8ec;overflow:hidden;margin:7px 0 2px}
+.caps .bar i{display:block;height:100%;width:40%;background:#2f9e6d}
+.caps .bar.indeterminate i{animation:bar 1.2s ease-in-out infinite}
+.caps .cap-actions{margin-top:8px}
+.caps .btn.stop{min-height:44px;font-size:15px}
+@keyframes bar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
 /* Buttons */
 .btn{min-height:48px;min-width:80px;padding:8px 20px;border-radius:24px;border:2px solid #99bbbb;background:#fff;font-size:17px;font-weight:600}
 .btn.yes{background:#2f9e6d;border-color:#2f9e6d;color:#fff}
@@ -140,13 +164,13 @@ button.tusk.pointing .pose-point{display:block}
 .q .res{margin-top:8px;font-size:14px;color:#52606d}
 .think{align-self:flex-start;color:#52606d;font-size:15px;padding:4px 8px}
 .compose{display:flex;gap:8px;padding:10px 8px;border-top:1px solid #d3dde3;align-items:center}
-.compose-frame{flex:1;min-width:0;height:60px;border:0;background:transparent;color-scheme:normal}
+.compose-frame{flex:1;min-width:0;height:104px;border:0;background:transparent;color-scheme:normal}
 .mic{width:52px;height:52px;border-radius:50%;border:2px solid #99bbbb;background:#fff;font-size:24px;flex:none;padding:0}
 .mic.on{background:#2f9e6d;border-color:#2f9e6d}
 .foot{padding:6px 14px 10px;font-size:13px;color:#52606d;text-align:center}
 
 /* Settings */
-.set{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.set{padding:10px 14px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
 .set label.f{display:flex;flex-direction:column;gap:4px;font-weight:600}
 .set select{height:44px;border-radius:12px;border:2px solid #99bbbb;padding:0 10px;font-size:17px;background:#fff}
 .modes{display:flex;flex-direction:column;gap:8px}
@@ -156,6 +180,11 @@ button.tusk.pointing .pose-point{display:block}
 .modecard span{font-size:14px;color:#52606d}
 .toggle{display:flex;align-items:center;gap:12px;min-height:44px;font-weight:600}
 .toggle input{width:28px;height:28px;flex:none}
+.speak-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.speak-row .act{min-height:44px;padding:4px 14px;font-size:16px;border-radius:22px;border:2px solid #99bbbb;background:#fff;font-weight:600}
+.voice-line{margin:2px 0 6px;font-size:15px;line-height:1.35}
+.voice-line.ok{color:#1a7f4b;font-weight:600}
+.voice-line.warn{color:#b42318;font-weight:600}
 .act{min-height:44px;border-radius:14px;border:2px solid #c3d0d8;background:#fff;font-size:16px;padding:8px 12px;text-align:left}
 
 /* Target marks */
