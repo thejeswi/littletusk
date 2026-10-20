@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bürgeramt Musterstadt – Wohnsitz anmelden</title>
+  <link rel="stylesheet" href="../page-assets/demo.css">
+  <style>
+    :root {
+      --bg: #f4f3ed;
+      --header-bg: #1b4d3e;
+      --header-text: #ffffff;
+      --brand: #1b4d3e;
+      --ink: #1c2621;
+      --muted: #5e6963;
+      --border: #cfd8d2;
+      --card-bg: #ffffff;
+      --notice-bg: #fcf8e8;
+    }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header.buergeramt-header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .crest {
+      width: 40px;
+      height: 40px;
+      background: #ffffff;
+      color: var(--header-bg);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+      border: 2px solid #d4af37;
+    }
+    .header-titles h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .header-titles p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      opacity: 0.9;
+    }
+    .header-meta {
+      margin-left: auto;
+      font-size: 11px;
+      text-align: right;
+      opacity: 0.85;
+    }
+    .breadcrumb {
+      background: #e6e4dc;
+      padding: 5px 24px;
+      font-size: 11.5px;
+      color: var(--muted);
+      border-bottom: 1px solid #d4cebe;
+    }
+    .breadcrumb a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 14px auto;
+      padding: 0 20px;
+    }
+    .page-title {
+      margin-bottom: 10px;
+    }
+    .page-title h2 {
+      margin: 0 0 2px;
+      font-size: 22px;
+      color: var(--brand);
+    }
+    .page-title .subtitle {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .subtitle .hint {
+      color: #718096;
+      font-style: italic;
+    }
+    .steps-bar {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0 16px;
+      background: #ffffff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      flex: 1;
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: #f8faf9;
+    }
+    .step.active {
+      color: var(--brand);
+      background: #e8f2ed;
+      border: 1px solid #b3d6c6;
+    }
+    .step .num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #d1dcd6;
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+    }
+    .step.active .num {
+      background: var(--brand);
+      color: #ffffff;
+    }
+    .layout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 16px;
+      align-items: start;
+    }
+    .form-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field.full-width {
+      grid-column: 1 / -1;
+    }
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .field label .hint {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .field input {
+      padding: 7px 10px;
+      font-size: 13.5px;
+      border: 1px solid #9eb3a8;
+      border-radius: 5px;
+      background: #ffffff;
+      color: var(--ink);
+      outline: none;
+    }
+    .field input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 2px rgba(27,77,62,0.15);
+    }
+    .field input::placeholder {
+      color: #9aa5a0;
+    }
+    .checkbox-field {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #f7faf8;
+      border-radius: 5px;
+      border: 1px solid #e0e8e4;
+    }
+    .checkbox-field label {
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .checkbox-field input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--brand);
+      cursor: pointer;
+    }
+    .legal-note {
+      margin: 10px 0 14px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted);
+      background: var(--notice-bg);
+      border-left: 3px solid #d4a737;
+      padding: 6px 10px;
+      border-radius: 0 4px 4px 0;
+    }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e9e6;
+    }
+    button.primary, input[type=submit].primary {
+      background: var(--brand);
+      color: #ffffff;
+      border: 0;
+      border-radius: 5px;
+      padding: 8px 20px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.primary:hover {
+      background: #143d31;
+    }
+    button.secondary {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid #b2c2b9;
+      border-radius: 5px;
+      padding: 8px 16px;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+    button.secondary:hover {
+      background: #f0f4f2;
+    }
+    .aside-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .aside-card h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--brand);
+      border-bottom: 1px solid #e2e8e5;
+      padding-bottom: 4px;
+    }
+    .aside-card ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+    .aside-card li {
+      margin-bottom: 5px;
+    }
+    .confirmation-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 540px;
+      margin: 20px auto;
+    }
+    .check-icon {
+      width: 52px;
+      height: 52px;
+      background: #e6f4ea;
+      color: #1e8e3e;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 auto 14px;
+    }
+    .confirmation-card h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      color: var(--brand);
+    }
+    .vorgang {
+      font-size: 14px;
+      background: #f0f7f3;
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid #c3e2d1;
+      color: var(--brand);
+      margin: 10px 0;
+    }
+    .confirmation-card p {
+      color: var(--muted);
+      font-size: 13.5px;
+      margin: 6px 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="buergeramt-header">
+    <div class="crest">BM</div>
+    <div class="header-titles">
+      <h1>Bürgeramt Musterstadt</h1>
+      <p>Amt für Bürgerangelegenheiten und Ausländerwesen</p>
+    </div>
+    <div class="header-meta">
+      Musterstadt Online-Dienste<br>
+      <span style="font-size: 10.5px;">Öffnungszeiten: Mo-Fr 08:00 - 16:00</span>
+    </div>
+  </header>
+
+  <div class="breadcrumb">
+    <a href="#">Bürgeramt</a> &rsaquo; <a href="#">Meldewesen</a> &rsaquo; Wohnsitz anmelden
+  </div>
+
+  <main class="container">
+    <div class="page-title">
+      <h2>Wohnsitz anmelden</h2>
+      <p class="subtitle">Register your residence in Musterstadt <span class="hint">(Anmeldung einer neuen Wohnung)</span></p>
+    </div>
+
+    <div class="steps-bar">
+      <div class="step active"><span class="num">1</span> Person</div>
+      <div class="step active"><span class="num">2</span> Wohnung</div>
+      <div class="step"><span class="num">3</span> Bestätigung</div>
+    </div>
+
+    <div class="layout-grid">
+      <div id="form-container" class="form-card">
+        <form id="buergeramt-form">
+          <div class="form-grid">
+            <div class="field">
+              <label for="familienname">Familienname <span class="hint">(Family name)</span> *</label>
+              <input type="text" id="familienname" name="familienname" placeholder="z. B. Winter" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="vorname">Vorname <span class="hint">(First name)</span></label>
+              <input type="text" id="vorname" name="vorname" value="Alex" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="geburtsdatum">Geburtsdatum <span class="hint">(Date of birth)</span></label>
+              <input type="text" id="geburtsdatum" name="geburtsdatum" value="14.05.1992" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="staatsangehoerigkeit">Staatsangehörigkeit <span class="hint">(Nationality)</span></label>
+              <input type="text" id="staatsangehoerigkeit" name="staatsangehoerigkeit" value="deutsch" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="zuzugsdatum">Zuzugsdatum <span class="hint">(Move-in date)</span></label>
+              <input type="text" id="zuzugsdatum" name="zuzugsdatum" value="01.10.2026" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="email">E-Mail-Adresse <span class="hint">(Email address - optional)</span></label>
+              <input type="email" id="email" name="email" value="alex.winter@example.com" autocomplete="off">
+            </div>
+            <div class="field full-width">
+              <label for="strasse">Neue Anschrift - Straße und Hausnummer <span class="hint">(New street & number)</span></label>
+              <input type="text" id="strasse" name="strasse" value="Lindenstraße 14" autocomplete="off">
+            </div>
+            <div class="field full-width">
+              <label for="plz_ort">Postleitzahl und Ort <span class="hint">(Postcode & city)</span></label>
+              <input type="text" id="plz_ort" name="plz_ort" value="10115 Berlin" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="checkbox-field">
+            <label>
+              <input type="checkbox" id="wohnungsgeber" checked>
+              Wohnungsgeberbestätigung liegt vor <span class="hint">(Housing provider confirmation attached)</span>
+            </label>
+          </div>
+
+          <p class="legal-note">
+            Hinweis nach § 17 Bundesmeldegesetz (BMG): Die Anmeldung ist innerhalb von zwei Wochen nach dem Einzug durchzuführen.
+            <span class="hint">(Notice: Registration must be completed within 2 weeks of moving in.)</span>
+          </p>
+
+          <div class="form-actions">
+            <button type="button" class="secondary">Zurück</button>
+            <button type="button" class="secondary">Speichern</button>
+            <button type="submit" id="weiter" class="primary">Weiter</button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="aside-card">
+        <h3>Wichtige Hinweise</h3>
+        <ul>
+          <li>Bitte halten Sie Ihren Personalausweis oder Reisepass bereit.</li>
+          <li>Die Wohnungsgeberbestätigung muss vom Vermieter unterschrieben sein.</li>
+          <li>Gebührenfrei für den Erstwohnsitz in Musterstadt.</li>
+        </ul>
+        <h3 style="margin-top: 12px;">Hilfe & Kontakt</h3>
+        <p style="margin: 0;">Bürgertelefon: 115<br>E-Mail: buergeramt@musterstadt.de</p>
+      </aside>
+    </div>
+
+    <div id="confirmation-card" class="confirmation-card" style="display:none;">
+      <div class="check-icon">✓</div>
+      <h2>Antrag gespeichert</h2>
+      <p class="vorgang">Vorgangsnummer <strong>B-2026-1042</strong></p>
+      <p>Ihre Anmeldung ist eingegangen.</p>
+    </div>
+  </main>
+
+  <span class="demo-badge">Demo</span>
+
+  <script>
+    document.getElementById('buergeramt-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('form-container').style.display = 'none';
+      document.getElementById('confirmation-card').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

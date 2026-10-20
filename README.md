@@ -6,9 +6,9 @@ A friendly little elephant that helps seniors, and anyone who finds the web conf
 
 Little Tusk is a Chrome extension. A small baby elephant called Tusk floats in the corner of every web page. When you get stuck on something silly, Tusk walks over to the right thing, points at it with its trunk, explains in plain words and, if you want, does it for you.
 
-[![Watch the 42-second Little Tusk demo](site/video/poster.jpg)](site/video/littletusk-demo-720p.mp4)
+[![Watch the 67-second Little Tusk demo](site/video/poster.jpg)](site/video/littletusk-demo-720p.mp4)
 
-▶ **Watch the 42-second demo** (MP4, 720p, silent): a confusing visa portal, a cookie notice, a newsletter popup, a scam email, and Tusk in German and Spanish.
+▶ **Watch the 67-second demo** (MP4, 720p, silent): the dangerous web, Tusk’s features, a real Bürgeramt form, German and Spanish, local-first setup, and a family setup link.
 
 A tour of every feature, with a video and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
 
