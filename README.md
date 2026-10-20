@@ -6,9 +6,11 @@ A friendly little elephant that helps seniors, and anyone who finds the web conf
 
 Little Tusk is a Chrome extension. A small baby elephant called Tusk floats in the corner of every web page. When you get stuck on something silly, Tusk walks over to the right thing, points at it with its trunk, explains in plain words and, if you want, does it for you.
 
-![Tusk waiting in the corner of a shop page](docs/screenshots/01-tusk-on-page.png)
+[![Watch the 42-second Little Tusk demo](site/video/poster.jpg)](site/video/littletusk-demo-720p.mp4)
 
-A tour of every feature, with screenshots and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
+▶ **Watch the 42-second demo** (MP4, 720p, silent): a confusing visa portal, a cookie notice, a newsletter popup, a scam email, and Tusk in German and Spanish.
+
+A tour of every feature, with a video and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
 
 ## Why
 
@@ -26,8 +28,6 @@ Tusk lives in the corner of the page. You can drag it anywhere, and you can hide
 
 - **Show me how.** Tusk stays quiet until you click it. Then it points, explains and waits for you to click. If you get stuck twice on the same step, it offers: "Shall I do it for you?"
 - **Look after me.** Tusk watches the page and speaks up when something gets in the way, such as a popup or a cookie banner. It speaks up at most once per page for each thing. The check runs on your computer and costs nothing until you say yes.
-
-![Tusk pointing at the tiny cross of a newsletter popup](docs/screenshots/03-pointing.png)
 
 When you are really stuck, Tusk can dim the page and light up the one thing that matters.
 
@@ -61,8 +61,6 @@ These rules are enforced in code, not only in the instructions to the model.
 - **Scam warnings.** Remote-access tools, gift cards and "urgent" payments are explained as the scams they probably are. Tusk also checks the page itself, on your computer: when a message pressures you the way scams do (an account that will be closed today, gift cards, "tell nobody"), Tusk marks that text, and in "Look after me" it speaks up without being asked. It then points at the safe way out, such as "Report spam", and never at what the scammer wants.
 - **Page text is information, not orders.** A page that says "ignore your instructions" gets ignored.
 
-![Tusk spots a scam email on its own](docs/screenshots/14-scam-warning.png)
-
 ### Four languages
 
 English, Deutsch, Español and English (India). Everything follows the setting: the buttons, Tusk's answers and its voice. The page can be in another language: a German shop is explained to you in your own language. English (India) uses short, plain sentences and familiar words such as UPI, net banking and OTP.
@@ -81,7 +79,6 @@ This is the "grandchild flow": you set Little Tusk up once, on their computer.
 2. **Add the key.** Either way works:
    - **Family settings page.** Open it from Tusk's Settings, "Family settings". Choose a provider, paste the key, set the monthly limit, language and mode, and click Save.
 
-     ![The family settings page](docs/screenshots/11-family-settings.png)
 
    - **Setup link by email.** On the family settings page, make a link and email it to yourself or to them. Opening it on their computer asks "Set up Little Tusk on this computer?" and saves the settings after one click.
 
@@ -147,13 +144,13 @@ npm run typecheck
 npm run e2e            # end to end, with a fake model provider: no key, no cost
 npm run scenarios      # "senior gets stuck" scenarios, free (see Scenario tests)
 npm run check:store    # Chrome Web Store readiness of the built dist/ (run npm run build first)
-npm run screenshots    # regenerates docs/screenshots/ on the local demo pages
+npm run screenshots    # regenerates the store screenshots locally (not committed)
 scripts/check-clean.sh # no personal paths or names in tracked files or the build
 ```
 
 To try Tusk by hand in a visible browser, run `scripts/dev-chrome.sh`. It builds the extension, starts a separate Chromium with it loaded and opens `demo/index.html`, a page that links every demo with what to say and which mode to use. It keeps its own profile in `.chrome-profile/`, so your key survives restarts.
 
-The demo pages in `demo/` are in German on purpose, with made-up names. The end-to-end tests and the screenshots use a build with a scripted fake model (`npm run build:e2e`), so they need no API key.
+The demo pages in `demo/` are made up, some in German and some in English, on purpose. The end-to-end tests and the screenshots use a build with a scripted fake model (`npm run build:e2e`), so they need no API key.
 
 ## Scenario tests
 
