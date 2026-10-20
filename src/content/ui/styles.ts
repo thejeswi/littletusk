@@ -136,14 +136,24 @@ button.talk:focus-visible .dot{outline:3px solid #ffb703;outline-offset:3px}
 
 /* Panels */
 .panel{position:fixed;z-index:2;background:#fff;border:2px solid #99bbbb;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28);
-  display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 16px;background:#eef3f6;border-bottom:1px solid #d3dde3}
+  display:flex;flex-direction:column;overflow:hidden;min-width:0;container-type:inline-size}
+.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 16px;background:#eef3f6;border-bottom:1px solid #d3dde3}
 .head h2{margin:0;font-size:20px;font-weight:700}
 .head-right{display:flex;align-items:center;gap:8px;margin-left:auto}
 .head-btn{white-space:nowrap}
 @media (max-width:480px){
   .head{flex-wrap:wrap}
   .head h2{flex:1}
+  .head-right{order:3;flex-basis:100%;margin-left:0}
+  .head-right .head-btn{flex:1;justify-content:center}
+}
+/* The panel is 380 px wide even on a desktop, so decide by the panel, not the window:
+   a long language puts the two action buttons on their own row and keeps the close button
+   on the title row. */
+@container (max-width:410px){
+  .head{flex-wrap:wrap}
+  .head h2{order:1}
+  .head .x{order:2;margin-left:auto}
   .head-right{order:3;flex-basis:100%;margin-left:0}
   .head-right .head-btn{flex:1;justify-content:center}
 }

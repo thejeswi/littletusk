@@ -739,7 +739,7 @@ export function mountOverlay(cb: OverlayCallbacks, initial: PublicSettings): Ove
     }
 
     // panels
-    if (!chatEl.hidden) placePanel(chatEl, 380, 540);
+    if (!chatEl.hidden) placePanel(chatEl, 380, 600);
     if (!setEl.hidden) placePanel(setEl, 340, 700);
     const panelBox = !chatEl.hidden ? boxRect(chatEl) : !setEl.hidden ? boxRect(setEl) : null;
     if (panelBox) avoid.push(panelBox);

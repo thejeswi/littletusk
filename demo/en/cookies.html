@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Northwind Weather – Cookies</title>
+<link rel="stylesheet" href="../page-assets/demo.css">
+<style>
+.bar { position:fixed; left:0; right:0; bottom:0; z-index:900; background:#fff; border-top:1px solid #d1d5db; box-shadow:0 -4px 16px rgba(0,0,0,.12); padding:18px 24px; display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+.bar.gone { display:none; }
+.bar p { margin:0; flex:1 1 320px; font-size:15px; }
+.bar .btns { display:flex; gap:10px; flex-wrap:wrap; }
+.bar .btns button { padding:10px 16px; font-size:15px; }
+</style></head>
+<body>
+<header class="site"><b>Northwind Weather</b><a href="#">Today</a><a href="#">This week</a><a href="#">Maps</a></header>
+<main>
+  <article class="card">
+    <h1>Weather in Brookhaven</h1>
+    <p>Mostly sunny today, with a few clouds in the west later. Highs around 19°C.</p>
+    <h2>The next few days</h2>
+    <p>Changeable tomorrow with some rain, then friendlier again at the weekend.</p>
+  </article>
+</main>
+<div class="bar cookie-banner" id="cb" role="dialog" aria-label="Cookie settings">
+  <p>We use cookies to improve Northwind Weather. With your consent we also use cookies for statistics. More in our privacy notice.</p>
+  <div class="btns">
+    <button class="primary" type="button" id="acc">Accept all</button>
+    <button class="secondary" type="button" id="nec">Only necessary</button>
+    <button class="secondary" type="button">Settings</button>
+  </div>
+</div>
+<span class="demo-badge">Demo</span>
+<script>
+['acc','nec'].forEach(function(i){ document.getElementById(i).addEventListener('click', function(){ document.getElementById('cb').classList.add('gone'); }); });
+</script>
+</body></html>

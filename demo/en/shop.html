@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hearth &amp; Home – Linden Garden Chair</title>
+<link rel="stylesheet" href="../page-assets/demo.css">
+<style>
+.product { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; }
+.pic { background:linear-gradient(135deg,#d9e8d2,#b7d3c6); border-radius:12px; min-height:260px; display:flex; align-items:center; justify-content:center; font-size:64px; }
+.price { font-size:28px; font-weight:700; margin:8px 0 16px; }
+@media (max-width:640px){ .product{grid-template-columns:1fr} }
+.backdrop { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; display:none; align-items:center; justify-content:center; padding:16px; }
+.backdrop.open { display:flex; }
+.popup { position:relative; background:#fff; border-radius:12px; padding:32px; max-width:420px; width:100%; text-align:center; }
+.popup h2 { margin-top:0; }
+.popup input[type=email] { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; margin:12px 0; font-size:16px; }
+.popup .close { position:absolute; top:8px; right:10px; background:none; border:0; color:#6b7280; font-size:13px; line-height:1; cursor:pointer; padding:6px 8px; border-radius:6px; }
+.popup .close:hover { background:#f3f4f6; color:#1f2a37; }
+</style></head>
+<body>
+<header class="site"><b>Hearth &amp; Home</b><a href="#">Garden</a><a href="#">Furniture</a><a href="#">Offers</a></header>
+<main>
+  <div class="card product">
+    <div class="pic" aria-hidden="true">🪑</div>
+    <div>
+      <h1>Linden Garden Chair</h1>
+      <p>A comfortable folding chair in acacia wood. Weatherproof, light, and put together in two minutes.</p>
+      <div class="price">$39.90</div>
+      <button class="primary" type="button" onclick="document.getElementById('msg').textContent='Thanks for your order (demo).'">Buy now</button>
+      <p id="msg" role="status"></p>
+    </div>
+  </div>
+</main>
+<div class="backdrop" id="nl" role="dialog" aria-modal="true" aria-label="Newsletter">
+  <div class="popup newsletter-popup">
+    <button class="close" type="button" aria-label="Close">Close</button>
+    <h2>Join the Hearth &amp; Home newsletter!</h2>
+    <p>Get 10% off your first order.</p>
+    <input type="email" placeholder="Your email address" aria-label="Email address">
+    <button class="primary" type="button">Get my discount</button>
+  </div>
+</div>
+<span class="demo-badge">Demo</span>
+<script>
+var nl = document.getElementById('nl');
+setTimeout(function(){ nl.classList.add('open'); }, 1000);
+nl.querySelector('.close').addEventListener('click', function(){ nl.classList.remove('open'); });
+</script>
+</body></html>

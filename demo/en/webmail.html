@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bluebird Mail – Inbox</title>
+<link rel="stylesheet" href="../page-assets/demo.css">
+<style>
+.app { display:grid; grid-template-columns:180px minmax(0,260px) minmax(0,1fr); gap:0; max-width:1100px; margin:20px auto; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; min-height:520px; }
+@media (max-width:860px){ .app{grid-template-columns:1fr} .folders,.list{border-right:0 !important} }
+.folders { border-right:1px solid #e5e7eb; padding:14px; font-size:15px; background:#fafafa; }
+.folders button.primary { width:100%; margin-bottom:12px; padding:10px; }
+.folders a { display:block; padding:6px 8px; color:var(--ink); text-decoration:none; border-radius:6px; }
+.folders a.on { background:#e0efe9; font-weight:600; }
+.list { border-right:1px solid #e5e7eb; }
+.row { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:14px; }
+.row b { display:block; }
+.row.on { background:#eef6f2; }
+.row small { color:var(--muted); }
+.mail { padding:22px 26px; }
+.mail h1 { font-size:22px; margin:0 0 6px; }
+.meta { color:var(--muted); font-size:13px; margin-bottom:14px; }
+.mail .warn { background:#fee2e2; border:1px solid #fca5a5; padding:10px 14px; border-radius:8px; font-weight:600; }
+.mail .buy { display:inline-block; margin:12px 0; background:#b91c1c; color:#fff; text-decoration:none; padding:12px 20px; border-radius:8px; font-weight:700; }
+.actions { margin-top:18px; display:flex; gap:10px; }
+#status { color:var(--brand); font-weight:600; min-height:1.4em; margin-top:10px; }
+</style></head>
+<body>
+<header class="site"><b>Bluebird Mail</b><a href="#">Inbox</a><a href="#">Contacts</a><a href="#">Settings</a></header>
+<div class="app">
+  <nav class="folders">
+    <button class="primary" type="button">New message</button>
+    <a class="on" href="#">Inbox (3)</a><a href="#">Sent</a><a href="#">Drafts</a><a href="#">Spam</a><a href="#">Trash</a>
+  </nav>
+  <section class="list">
+    <div class="row on"><b>Account Team</b>Your account will be locked!<br><small>Today, 08:12</small></div>
+    <div class="row"><b>City Library</b>Your books are due<br><small>Yesterday</small></div>
+    <div class="row"><b>Granddaughter Lena</b>Photos from the weekend<br><small>Monday</small></div>
+  </section>
+  <article class="mail">
+    <h1>Your account will be locked!</h1>
+    <div class="meta">From: Account Team &lt;support@bluebird-account-check.example&gt; · Today, 08:12</div>
+    <p class="warn">Urgent: Your Example Mail account will be locked today at 6:00 pm and all your messages will be deleted!</p>
+    <p>Dear customer, we could not confirm your payment details. To prevent the lock, buy <b>gift cards worth $500</b> at a supermarket or gas station today and send us the codes in a reply to this email.</p>
+    <p>Don't tell anyone about this. Once we receive the codes, your account will stay open.</p>
+    <a class="buy" href="#" onclick="document.getElementById('status').textContent='Gift-card page opened (demo).';return false">Buy gift cards now</a>
+    <div class="actions"><button class="secondary" type="button" onclick="document.getElementById('status').textContent='Reply window opened (demo).'">Reply</button><button class="secondary" type="button" onclick="document.getElementById('status').textContent='Reported as spam (demo).'">Report spam</button></div>
+    <p id="status" role="status"></p>
+  </article>
+</div>
+<span class="demo-badge">Demo</span>
+</body></html>

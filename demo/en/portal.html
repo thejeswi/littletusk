@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>India Visit Portal – Visa & Travel Services</title>
+<link rel="stylesheet" href="../page-assets/demo.css">
+<style>
+:root { --navy:#173a6b; --red:#c62828; --orange:#f57c00; --pale:#fff8e1; }
+body { background:#eef1f4; }
+.utility { background:#0f2a4f; color:#dbe6f5; font-size:11px; padding:4px 18px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+.utility b { color:#fff; }
+.utility .right { margin-left:auto; display:flex; gap:12px; }
+.masthead { background:#fff; border-bottom:4px solid var(--orange); padding:10px 18px; display:flex; gap:16px; align-items:center; }
+.emblem { width:44px; height:44px; border-radius:50%; background:var(--navy); color:#fff; display:grid; place-items:center; font-weight:800; font-size:15px; border:3px solid #d7a33a; }
+.masthead h1 { font-size:22px; line-height:1.05; color:var(--navy); }
+.masthead p { font-size:11px; color:#5b6b7c; }
+.masthead .lang { margin-left:auto; font-size:11px; text-align:right; color:#5b6b7c; }
+.masthead .lang a { color:var(--navy); }
+.nav { background:var(--navy); display:flex; flex-wrap:wrap; gap:0; }
+.nav a { color:#fff; font-size:12px; padding:8px 11px; text-decoration:none; border-right:1px solid #2c5183; }
+.nav a.red { background:var(--red); font-weight:700; }
+.notice { background:var(--pale); border-bottom:1px solid #e7d49a; color:#5a4500; font-size:11px; padding:5px 18px; }
+.wrap { max-width:1180px; margin:10px auto; padding:0 12px; display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:10px; }
+.panel { background:#fff; border:1px solid #c9d2dc; margin-bottom:10px; }
+.panel h2 { background:#e8eef5; color:var(--navy); font-size:13px; padding:6px 10px; border-bottom:1px solid #c9d2dc; display:flex; justify-content:space-between; }
+.hero { background:linear-gradient(115deg,#173a6b 0%,#2f6f9e 45%,#f2a33a 100%); color:#fff; padding:22px 24px 20px; position:relative; overflow:hidden; }
+.hero h2 { background:none; border:0; color:#fff; font-size:30px; padding:0; display:block; }
+.hero p { font-size:12px; max-width:560px; margin:6px 0 14px; }
+.hero .taj { position:absolute; right:-10px; bottom:-24px; font-size:110px; opacity:.18; }
+.hero .cta { background:var(--red); color:#fff; border:0; padding:10px 18px; font-weight:700; font-size:13px; border-radius:3px; }
+.hero .ghost { background:transparent; color:#fff; border:1px solid #fff; padding:9px 14px; font-size:12px; margin-left:8px; border-radius:3px; }
+.form { padding:10px 12px 12px; }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.field { font-size:11px; color:#3c4b5c; margin-bottom:7px; }
+.field input, .field select { width:100%; font-size:12px; padding:6px; border:1px solid #9aa8b6; border-radius:2px; background:#fff; }
+.checks { font-size:10.5px; color:#3c4b5c; display:flex; gap:12px; flex-wrap:wrap; margin:4px 0 9px; }
+.btn-orange { background:var(--orange); color:#fff; border:0; padding:8px 16px; font-size:12px; font-weight:700; border-radius:2px; }
+.small { font-size:10px; color:#6b7a89; line-height:1.35; }
+.links { list-style:none; padding:6px 10px 9px; font-size:11.5px; }
+.links li { border-bottom:1px dotted #c9d2dc; padding:5px 0; }
+.links a { color:#1b4c86; text-decoration:none; }
+.links a::before { content:"› "; color:var(--orange); font-weight:700; }
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; }
+.tile { background:#f2f6fa; border:1px solid #c9d2dc; padding:7px; font-size:11px; color:#173a6b; font-weight:600; }
+.tile span { display:block; font-size:9px; color:#6b7a89; font-weight:400; margin-top:2px; }
+.updates { list-style:none; font-size:10.5px; padding:6px 10px 9px; }
+.updates li { padding:4px 0; border-bottom:1px dotted #c9d2dc; color:#3c4b5c; }
+.updates b { color:var(--red); font-size:9.5px; margin-right:4px; }
+.bottom { max-width:1180px; margin:0 auto 10px; padding:0 12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.footbox { background:#fff; border:1px solid #c9d2dc; padding:8px 10px; font-size:10.5px; color:#3c4b5c; }
+.footbox b { color:var(--navy); display:block; font-size:11.5px; margin-bottom:4px; }
+.bar { position:fixed; left:0; right:0; bottom:0; z-index:900; background:#fff; border-top:2px solid var(--navy); box-shadow:0 -4px 16px rgba(0,0,0,.16); padding:10px 16px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+.bar.gone { display:none; }
+.bar p { margin:0; flex:1 1 420px; font-size:11px; color:#3c4b5c; }
+.bar .btns { display:flex; gap:6px; flex-wrap:wrap; }
+.bar .btns button { padding:7px 11px; font-size:11px; border-radius:2px; }
+.bar .btns .primary { background:var(--navy); color:#fff; border:1px solid var(--navy); }
+.bar .btns .secondary { background:#fff; color:var(--navy); border:1px solid #9aa8b6; }
+@media (max-width:860px){ .wrap,.bottom{grid-template-columns:1fr} }
+</style></head>
+<body>
+<div class="utility"><b>An official website of the India Visit Portal</b><span>Skip to main content</span><span class="right"><a href="#" style="color:#dbe6f5">English</a><a href="#" style="color:#dbe6f5">हिंदी</a><a href="#" style="color:#dbe6f5">தமிழ்</a><span>20 Oct 2026, 12:40 IST</span></span></div>
+<div class="masthead">
+  <div class="emblem">IV</div>
+  <div><h1>India Visit Portal</h1><p>Ministry of Tourism &amp; Visa Services · Government of India</p></div>
+  <div class="lang">Helpline: 1800-11-2026<br><a href="#">Contact us</a> · <a href="#">Locate a centre</a></div>
+</div>
+<nav class="nav"><a class="red" href="#">APPLY FOR VISA</a><a href="#">Visa status</a><a href="#">Track application</a><a href="#">Visa fees</a><a href="#">Documents</a><a href="#">FAQs</a><a href="#">Embassies</a><a href="#">Login</a><a href="#">Register</a><a href="#">Feedback</a></nav>
+<div class="notice">Important: e-Visa applications should be submitted at least 4 days before travel. Beware of unauthorised agents and websites. Read the latest advisory before you pay any fee.</div>
+<main class="wrap">
+  <div>
+    <section class="panel hero">
+      <div class="taj">🛕</div>
+      <h2>Visit India</h2>
+      <p>Apply for a tourist, business, medical or student visa. Check the requirements for your country before you begin.</p>
+      <button class="cta">Apply for e-Visa</button><button class="ghost">Check visa status</button>
+    </section>
+    <section class="panel">
+      <h2>Apply for a Visa <span style="font-weight:400;font-size:10px">All fields are mandatory*</span></h2>
+      <div class="form">
+        <div class="row">
+          <div class="field">Nationality<select><option>Select country</option><option>United Kingdom</option><option>United States</option><option>Germany</option><option>India</option></select></div>
+          <div class="field">Passport number<input value="" placeholder="Enter passport number"></div>
+        </div>
+        <div class="row">
+          <div class="field">Date of birth<input type="date" value="1960-01-01"></div>
+          <div class="field">Visa type<select><option>Tourist visa</option><option>Business visa</option><option>Medical visa</option><option>Student visa</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field">Port of arrival<select><option>Select port</option><option>Delhi</option><option>Mumbai</option><option>Bengaluru</option></select></div>
+          <div class="field">Expected arrival<input type="date" value="2026-11-12"></div>
+        </div>
+        <div class="checks"><label><input type="checkbox"> I have read the instructions</label><label><input type="checkbox"> I agree to the terms</label><label><input type="checkbox"> I am not a robot</label></div>
+        <button class="btn-orange">Start application</button>
+        <p class="small">Processing time is usually 72 hours, but may take longer. Fees are non-refundable. Do not share your passport or payment details with agents.</p>
+      </div>
+    </section>
+    <div class="bottom">
+      <div class="footbox"><b>Visa categories</b>Tourist · Business · Medical · Student · Transit · Conference</div>
+      <div class="footbox"><b>Before you travel</b>Passport validity · Return ticket · Proof of funds · Travel insurance</div>
+      <div class="footbox"><b>Need help?</b>Helpline 1800-11-2026 · <a href="#">Live chat</a> · <a href="#">Email us</a></div>
+    </div>
+  </div>
+  <aside>
+    <section class="panel"><h2>Quick links</h2><ul class="links"><li><a href="#">Apply for e-Visa</a></li><li><a href="#">Check visa status</a></li><li><a href="#">Track your application</a></li><li><a href="#">Visa fees and payment</a></li><li><a href="#">Required documents</a></li><li><a href="#">Photo and passport rules</a></li><li><a href="#">Visa on arrival</a></li><li><a href="#">Extend your visa</a></li><li><a href="#">Report a problem</a></li><li><a href="#">Frequently asked questions</a></li></ul></section>
+    <section class="panel"><h2>Visa types</h2><div class="tiles"><div class="tile">e-Tourist<span>30 days · double entry</span></div><div class="tile">e-Business<span>1 year · multiple entry</span></div><div class="tile">Medical<span>60 days · triple entry</span></div><div class="tile">Student<span>Course duration</span></div><div class="tile">Transit<span>15 days · single entry</span></div><div class="tile">Conference<span>Event dates</span></div></div></section>
+    <section class="panel"><h2>Latest updates</h2><ul class="updates"><li><b>NEW</b> e-Visa fees revised from 1 October 2026.</li><li><b>ALERT</b> Fake websites are charging extra fees. Use only this portal.</li><li><b>NOTICE</b> Biometrics may be required at selected airports.</li><li><b>INFO</b> Apply at least 4 days before your flight.</li><li><b>INFO</b> Keep a printed copy of your visa.</li></ul></section>
+    <section class="panel"><h2>Languages</h2><div class="tiles"><div class="tile">English<span>English</span></div><div class="tile">हिंदी<span>Hindi</span></div><div class="tile">தமிழ்<span>Tamil</span></div><div class="tile">বাংলা<span>Bengali</span></div></div></section>
+  </aside>
+</main>
+<div class="bar cookie-banner" id="cb" role="dialog" aria-label="Cookie settings">
+  <p>We use cookies to improve the India Visit Portal. With your consent we also use cookies for statistics and to remember your language. Read our privacy notice.</p>
+  <div class="btns"><button class="primary" type="button" id="acc">Accept all</button><button class="secondary" type="button" id="nec">Only necessary</button><button class="secondary" type="button">Settings</button></div>
+</div>
+<span class="demo-badge">Demo</span>
+<script>
+['acc','nec'].forEach(function(i){ document.getElementById(i).addEventListener('click', function(){ document.getElementById('cb').classList.add('gone'); }); });
+</script>
+</body></html>

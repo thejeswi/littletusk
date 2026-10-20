@@ -45,3 +45,18 @@ for (const [name, url, size] of [
     await expect(bubble).toBeHidden();
   });
 }
+
+test("a longer language keeps every chat header button inside the panel", async ({ context, demoUrl, tusk }) => {
+  await tusk.configure({ language: "de" });
+  const page = await context.newPage();
+  await page.goto(`${demoUrl}/blank.html`);
+  await page.locator("button.tusk").click();
+  const panel = page.locator(".panel:not([hidden])");
+  await panel.locator(".list").waitFor();
+  const p = (await panel.boundingBox())!;
+  for (const sel of [".head-right", ".x"]) {
+    const b = (await panel.locator(sel).boundingBox())!;
+    expect(b.x, `${sel} starts inside the panel`).toBeGreaterThanOrEqual(p.x);
+    expect(b.x + b.width, `${sel} ends inside the panel`).toBeLessThanOrEqual(p.x + p.width + 0.5);
+  }
+});
