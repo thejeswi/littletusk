@@ -6,11 +6,11 @@ A friendly little elephant that helps seniors, and anyone who finds the web conf
 
 Little Tusk is a Chrome extension. A small baby elephant called Tusk floats in the corner of every web page. When you get stuck on something silly, Tusk walks over to the right thing, points at it with its trunk, explains in plain words and, if you want, does it for you.
 
-[![Animated preview of the Little Tusk demo](site/video/readme-preview.gif)](https://thejeswi.github.io/littletusk/video/littletusk-demo-67s-v2-720p.mp4)
+[![Animated preview of the Little Tusk demo](site/video/readme-preview.gif)](https://thejeswi.github.io/littletusk/video/littletusk-demo-67s-v3-720p.mp4)
 
 ▶ **Watch the full 67-second demo** (MP4, 720p, narrated): the dangerous web, Tusk’s features, a real Bürgeramt form, German and Spanish, local-first setup, and a family setup link.
 
-The soothing British narration and score were generated locally with open models. A tour of every feature, with a video and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
+The warm Indian English narration uses Gemini 3.8 TTS; the score was generated locally with ACE-Step. A tour of every feature, with a video and install steps, is on the website: **[thejeswi.github.io/littletusk](https://thejeswi.github.io/littletusk/)**.
 
 ## Why
 
